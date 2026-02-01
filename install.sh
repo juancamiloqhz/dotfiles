@@ -46,6 +46,22 @@ link_file "$DOTFILES_DIR/cursor/settings.json"   "$HOME/Library/Application Supp
 link_file "$DOTFILES_DIR/cursor/keybindings.json" "$HOME/Library/Application Support/Cursor/User/keybindings.json"
 
 # ---------------------------------------------------------------------------
+# LaunchAgent (auto-backup)
+# ---------------------------------------------------------------------------
+
+PLIST_NAME="com.juancamiloqhz.dotfiles-backup.plist"
+PLIST_SRC="$DOTFILES_DIR/$PLIST_NAME"
+PLIST_DST="$HOME/Library/LaunchAgents/$PLIST_NAME"
+
+link_file "$PLIST_SRC" "$PLIST_DST"
+
+if launchctl list | grep -q "com.juancamiloqhz.dotfiles-backup"; then
+  ok "LaunchAgent already loaded"
+else
+  launchctl load "$PLIST_DST" 2>/dev/null && ok "LaunchAgent loaded" || warn "Failed to load LaunchAgent"
+fi
+
+# ---------------------------------------------------------------------------
 # Homebrew
 # ---------------------------------------------------------------------------
 
