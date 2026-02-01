@@ -10,7 +10,7 @@
   <array>
     <string>/bin/bash</string>
     <string>-l</string>
-    <string>/Users/juancamiloqhz/dotfiles/scripts/auto-backup.sh</string>
+    <string>/Users/juancamiloqhz/Dev/dotfiles/scripts/auto-backup.sh</string>
   </array>
 
   <key>StartCalendarInterval</key>

@@ -67,7 +67,7 @@ fi
 
 if command -v brew &>/dev/null; then
   info "Running brew bundle..."
-  brew bundle --file="$DOTFILES_DIR/Brewfile" --no-lock
+  brew bundle --file="$DOTFILES_DIR/Brewfile"
   ok "Homebrew packages installed"
 else
   warn "brew not found — skipping Homebrew bundle"

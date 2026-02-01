@@ -147,8 +147,8 @@ load-nvmrc() {
 add-zsh-hook chpwd load-nvmrc
 load-nvmrc
 
-# GitHub registry token — fetched at runtime via Doppler or exported manually
-# export GITHUB_REGISTRY_TOKEN="$(doppler secrets get GITHUB_REGISTRY_TOKEN --plain 2>/dev/null)"
+# Source secrets (not tracked by git)
+[ -f ~/.secrets ] && source ~/.secrets
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh

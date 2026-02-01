@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DOTFILES_DIR="$HOME/dotfiles"
+DOTFILES_DIR="$HOME/Dev/dotfiles"
 LOG_DIR="$HOME/.local/share/dotfiles-backup"
 LOG_FILE="$LOG_DIR/backup.log"
 
