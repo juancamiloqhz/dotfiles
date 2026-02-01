@@ -27,6 +27,14 @@ brew bundle dump --file="$DOTFILES_DIR/Brewfile" --force >> "$LOG_FILE" 2>&1
 log "Exporting Cursor extensions..."
 cursor --list-extensions > "$DOTFILES_DIR/cursor/extensions.txt" 2>> "$LOG_FILE"
 
+# Encrypted .env backup to iCloud
+log "Running env backup..."
+if bash "$DOTFILES_DIR/scripts/env-backup.sh" 2>> "$LOG_FILE"; then
+  log "Env backup completed"
+else
+  log "Env backup failed (check passphrase in ~/.secrets)"
+fi
+
 # Stage changes
 cd "$DOTFILES_DIR"
 git add -A
