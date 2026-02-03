@@ -56,6 +56,7 @@
     "geist",
     "github",
     "gorhom",
+    "goyellowbird",
     "healthcheck",
     "homelife",
     "hotfixes",
@@ -111,6 +112,7 @@
     "Passwordless",
     "patenthawk",
     "pglite",
+    "pgtap",
     "pipefail",
     "PIXFORMAT",
     "plpgsql",
@@ -217,31 +219,31 @@
     "youtube",
     "zeroconf",
     "zerolatency",
-    "zustand"
+    "zustand",
   ],
   "git.confirmSync": false,
   "cursor.cpp.disabledLanguages": ["plaintext"],
   "editor.formatOnSave": true,
   "symbols.hidesExplorerArrows": false,
   "[typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
   },
   "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
   },
   "editor.fontFamily": "'Fira Code',Menlo, Monaco, 'Courier New', monospace",
   "editor.fontLigatures": true,
   "cursor.inlineDiff.enablePerformanceProtection": false,
   "[markdown]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
   },
   "[javascript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
   },
   "claudeCode.preferredLocation": "panel",
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[css]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
   },
-  "githubPullRequests.pullBranch": "never"
+  "githubPullRequests.pullBranch": "never",
 }
