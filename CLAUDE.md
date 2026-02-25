@@ -35,6 +35,8 @@ tail -20 ~/.local/share/dotfiles-backup/backup.log
 - **`scripts/env-backup.sh`** — finds all `.env*` files under `~/Dev/`, encrypts them into a single archive with openssl, stores it in iCloud Drive. Passphrase comes from `ENV_BACKUP_PASSPHRASE` in `~/.secrets`.
 - **`scripts/env-restore.sh`** — decrypts the iCloud archive and restores `.env` files to `~/Dev/`. Skips existing files unless `--force` is passed.
 - **`com.juancamiloqhz.dotfiles-backup.plist`** — macOS LaunchAgent definition. Gets symlinked into `~/Library/LaunchAgents/` by install.sh. Runs the backup script at noon; if asleep, runs on wake.
+- **`iterm2/install.sh`** — standalone installer for iTerm2 + Cobalt2 theme. Installs Oh My Zsh, Powerline fonts, Cobalt2 ZSH theme, tmux, and it2 CLI. Called automatically by the main install.sh. The iTerm2 JSON profile must be imported manually.
+- **`iterm2/juancamiloqhz-cobalt2.json`** — pre-configured iTerm2 profile with Cobalt2 colors, Menlo Regular 15 font, Powerline glyphs, and word-navigation key mappings.
 
 ## Symlink mapping
 

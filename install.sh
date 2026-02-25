@@ -62,6 +62,22 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# iTerm2 + Cobalt2 setup
+# ---------------------------------------------------------------------------
+
+ITERM2_INSTALL="$DOTFILES_DIR/iterm2/install.sh"
+if [ -f "$ITERM2_INSTALL" ]; then
+  info "Running iTerm2 setup..."
+  if bash "$ITERM2_INSTALL"; then
+    ok "iTerm2 setup complete (import profile manually — see iterm2/README.md)"
+  else
+    warn "iTerm2 setup failed — run iterm2/install.sh manually to debug"
+  fi
+else
+  warn "iterm2/install.sh not found — skipping iTerm2 setup"
+fi
+
+# ---------------------------------------------------------------------------
 # Homebrew
 # ---------------------------------------------------------------------------
 
