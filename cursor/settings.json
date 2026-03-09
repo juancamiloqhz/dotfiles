@@ -228,6 +228,7 @@
     "sqlalchemy",
     "Stairstep",
     "stairsteps",
+    "statewire",
     "streetwear",
     "subcomponents",
     "supabase",
