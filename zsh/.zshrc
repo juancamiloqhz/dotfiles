@@ -124,24 +124,39 @@ export NVM_DIR="$HOME/.nvm"
 # --- Auto-switch Node Version based on .nvmrc ---
 autoload -U add-zsh-hook
 
+ensure_corepack() {
+  command -v corepack >/dev/null 2>&1 || return 0
+  corepack enable >/dev/null 2>&1
+}
+
 load-nvmrc() {
-  local node_version="$(nvm version)"
-  local nvmrc_path="$(nvm_find_nvmrc)"
+  command -v nvm >/dev/null 2>&1 || return 0
+
+  local node_version nvmrc_path nvmrc_version nvmrc_node_version default_node_version
+
+  node_version="$(nvm version)"
+  nvmrc_path="$(nvm_find_nvmrc)"
 
   if [ -n "$nvmrc_path" ]; then
-    local nvmrc_node_version=$(nvm version "$(cat "${nvmrc_path}")")
+    read -r nvmrc_version < "$nvmrc_path"
+    nvmrc_node_version="$(nvm version "$nvmrc_version")"
 
     if [ "$nvmrc_node_version" = "N/A" ]; then
       # Version missing? Install it explicitly.
       echo "Installing Node version from .nvmrc..."
       nvm install
+      ensure_corepack
     elif [ "$nvmrc_node_version" != "$node_version" ]; then
       # Version exists? Switch silently.
       nvm use --silent
+      ensure_corepack
+    else
+      ensure_corepack
     fi
   elif [ "$node_version" != "$(nvm version default)" ]; then
     # Revert to default silently when leaving a project
     nvm use default --silent
+    ensure_corepack
   fi
 }
 
