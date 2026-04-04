@@ -336,4 +336,7 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode",
   },
   "githubPullRequests.pullBranch": "never",
+  "workbench.editorAssociations": {
+    "*.svg": "default",
+  },
 }
