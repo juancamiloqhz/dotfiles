@@ -2,6 +2,7 @@ aaron-bond.better-comments
 antfu.slidev
 anthropic.claude-code
 anysphere.cursorpyright
+anysphere.remote-ssh
 biomejs.biome
 bradlc.vscode-tailwindcss
 castrogusttavo.symbols
