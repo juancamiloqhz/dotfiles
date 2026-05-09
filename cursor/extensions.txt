@@ -30,6 +30,7 @@ ms-python.python
 openai.chatgpt
 pflannery.vscode-versionlens
 pkief.material-icon-theme
+prisma.prisma
 redhat.vscode-yaml
 streetsidesoftware.code-spell-checker
 streetsidesoftware.code-spell-checker-spanish
