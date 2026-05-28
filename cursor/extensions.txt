@@ -18,6 +18,7 @@ editorconfig.editorconfig
 enkia.tokyo-night
 esbenp.prettier-vscode
 expo.vscode-expo-tools
+fwcd.kotlin
 github.vscode-github-actions
 github.vscode-pull-request-github
 humao.rest-client
