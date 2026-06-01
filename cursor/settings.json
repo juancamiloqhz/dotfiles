@@ -356,4 +356,6 @@
     "*.svg": "default",
   },
   "window.autoDetectColorScheme": false,
+  "kotlin.languageServer.enabled": false,
+  "kotlin.debugAdapter.enabled": false,
 }
