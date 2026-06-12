@@ -90,6 +90,7 @@
     "googleusercontent",
     "gorhom",
     "goyellowbird",
+    "gson",
     "healthcheck",
     "helpdesk",
     "homelife",
@@ -132,6 +133,7 @@
     "lifeos",
     "lightningcss",
     "linkedin",
+    "liquibase",
     "livestreams",
     "maxrate",
     "Mbps",
@@ -362,4 +364,5 @@
   "window.autoDetectColorScheme": false,
   "kotlin.languageServer.enabled": false,
   "kotlin.debugAdapter.enabled": false,
+  "githubPullRequests.fileListLayout": "tree",
 }
