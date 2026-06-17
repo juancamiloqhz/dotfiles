@@ -36,6 +36,8 @@ brew "lua"
 brew "luarocks"
 # CLI for Mermaid library
 brew "mermaid-cli"
+# Incremental parsing library
+brew "tree-sitter"
 # Ambitious Vim-fork focused on extensibility and agility
 brew "neovim"
 # General-purpose speech recognition model
@@ -54,8 +56,6 @@ brew "poppler"
 brew "tectonic"
 # Terminal multiplexer
 brew "tmux"
-# Incremental parsing library
-brew "tree-sitter"
 # Parser generator tool
 brew "tree-sitter-cli"
 # Extraction utility for .zip compressed archives
@@ -70,6 +70,8 @@ cask "font-fira-code"
 cask "font-jetbrains-mono-nerd-font"
 # Terminal emulator that uses platform-native UI and GPU acceleration
 cask "ghostty"
+# AI coding agent desktop client
+cask "opencode-desktop"
 vscode "aaron-bond.better-comments"
 vscode "antfu.slidev"
 vscode "anthropic.claude-code"
