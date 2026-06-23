@@ -230,6 +230,7 @@
     "RTSP",
     "runloop",
     "Schizotypal",
+    "scoreable",
     "seba",
     "Seeed",
     "sendgrid",
@@ -366,4 +367,5 @@
   "kotlin.languageServer.enabled": false,
   "kotlin.debugAdapter.enabled": false,
   "githubPullRequests.fileListLayout": "tree",
+  "security.promptForLocalFileProtocolHandling": false,
 }
