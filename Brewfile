@@ -72,6 +72,8 @@ cask "font-jetbrains-mono-nerd-font"
 cask "ghostty"
 # AI coding agent desktop client
 cask "opencode-desktop"
+# Rust-based terminal
+cask "warp"
 vscode "aaron-bond.better-comments"
 vscode "antfu.slidev"
 vscode "anthropic.claude-code"
