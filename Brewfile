@@ -62,6 +62,8 @@ brew "tree-sitter-cli"
 brew "unzip"
 # Internet file retriever
 brew "wget"
+# Modern Go client + CLI for the Google Places API (New)
+brew "openclaw/tap/goplaces", link: false
 # Terminal-based AI coding assistant
 cask "claude-code"
 # OpenAI's coding agent that runs in your terminal
@@ -70,6 +72,8 @@ cask "font-fira-code"
 cask "font-jetbrains-mono-nerd-font"
 # Terminal emulator that uses platform-native UI and GPU acceleration
 cask "ghostty"
+# Modern Go client + CLI for the Google Places API (New).
+cask "openclaw/tap/goplaces", trusted: true
 # AI coding agent desktop client
 cask "opencode-desktop"
 # Rust-based terminal
