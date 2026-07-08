@@ -368,4 +368,12 @@
   "kotlin.debugAdapter.enabled": false,
   "githubPullRequests.fileListLayout": "tree",
   "security.promptForLocalFileProtocolHandling": false,
+  "yaml.disableSchemaDetection": [
+    "**/.github/workflows/*.yml",
+    "**/.github/workflows/*.yaml",
+    "**/.gitea/workflows/*.yml",
+    "**/.gitea/workflows/*.yaml",
+    "**/.forgejo/workflows/*.yml",
+    "**/.forgejo/workflows/*.yaml",
+  ],
 }
