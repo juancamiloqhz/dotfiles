@@ -387,4 +387,7 @@
     "**/.forgejo/workflows/*.yml",
     "**/.forgejo/workflows/*.yaml",
   ],
+  "remote.SSH.remotePlatform": {
+    "ovh-dev": "linux"
+  },
 }
