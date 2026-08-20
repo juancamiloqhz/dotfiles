@@ -65,7 +65,7 @@ brew "wget"
 # Modern Go client + CLI for the Google Places API (New)
 brew "openclaw/tap/goplaces", link: false
 # Terminal-based AI coding assistant
-cask "claude-code"
+cask "claude-code@latest"
 # OpenAI's coding agent that runs in your terminal
 cask "codex"
 cask "font-fira-code"
