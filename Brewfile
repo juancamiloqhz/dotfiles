@@ -14,6 +14,8 @@ brew "curl"
 brew "fd"
 # Play, record, convert, and stream select audio and video codecs
 brew "ffmpeg"
+# Free lossless audio codec
+brew "flac"
 # Command-line tools for fly.io services
 brew "flyctl"
 # Command-line fuzzy finder written in Go
@@ -30,12 +32,16 @@ brew "git"
 brew "imagemagick"
 # Simple terminal UI for git commands
 brew "lazygit"
+# Vorbis general audio compression codec
+brew "libvorbis"
 # Powerful, lightweight programming language
 brew "lua"
 # Package manager for the Lua programming language
 brew "luarocks"
 # CLI for Mermaid library
 brew "mermaid-cli"
+# MP3 player for Linux and UNIX
+brew "mpg123"
 # Incremental parsing library
 brew "tree-sitter"
 # Ambitious Vim-fork focused on extensibility and agility
