@@ -85,4 +85,5 @@ cask "opencode-desktop"
 # Rust-based terminal
 cask "warp"
 npm "@earendil-works/pi-coding-agent"
+npm "defuddle"
 npm "opencode-ai"
