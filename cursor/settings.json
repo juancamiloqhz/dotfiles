@@ -1,7 +1,7 @@
 {
   "window.commandCenter": true,
   "workbench.sideBar.location": "right",
-  "workbench.colorTheme": "Cobalt2",
+  "workbench.colorTheme": "Cursor Light",
   "workbench.iconTheme": "material-icon-theme",
   "cSpell.userWords": [
     "aesjs",
@@ -388,6 +388,7 @@
     "**/.forgejo/workflows/*.yaml",
   ],
   "remote.SSH.remotePlatform": {
-    "ovh-dev": "linux"
+    "ovh-dev": "linux",
   },
+  "workbench.statusBar.visible": false,
 }

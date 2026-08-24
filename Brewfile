@@ -12,6 +12,8 @@ brew "cocoapods"
 brew "curl"
 # Simple, fast and user-friendly alternative to find
 brew "fd"
+# MP3 player for Linux and UNIX
+brew "mpg123"
 # Play, record, convert, and stream select audio and video codecs
 brew "ffmpeg"
 # Free lossless audio codec
@@ -40,8 +42,6 @@ brew "lua"
 brew "luarocks"
 # CLI for Mermaid library
 brew "mermaid-cli"
-# MP3 player for Linux and UNIX
-brew "mpg123"
 # Incremental parsing library
 brew "tree-sitter"
 # Ambitious Vim-fork focused on extensibility and agility
