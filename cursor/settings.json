@@ -388,7 +388,6 @@
     "**/.forgejo/workflows/*.yaml",
   ],
   "remote.SSH.remotePlatform": {
-    "ovh-dev": "linux",
+    "ovh-dev": "linux"
   },
-  "workbench.statusBar.visible": false,
 }
