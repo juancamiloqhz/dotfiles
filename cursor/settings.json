@@ -1,7 +1,7 @@
 {
   "window.commandCenter": true,
   "workbench.sideBar.location": "right",
-  "workbench.colorTheme": "Cursor Light",
+  "workbench.colorTheme": "Tokyo Night",
   "workbench.iconTheme": "material-icon-theme",
   "cSpell.userWords": [
     "aesjs",
