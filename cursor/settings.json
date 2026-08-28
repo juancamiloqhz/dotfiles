@@ -308,6 +308,7 @@
     "ultrathink",
     "Underserved",
     "undocked",
+    "unpooled",
     "Uploadthing",
     "Upsell",
     "upserted",
@@ -388,6 +389,7 @@
     "**/.forgejo/workflows/*.yaml",
   ],
   "remote.SSH.remotePlatform": {
-    "ovh-dev": "linux"
+    "ovh-dev": "linux",
+    "agent-vps.tail30b070.ts.net": "linux"
   },
 }
