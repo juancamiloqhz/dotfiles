@@ -15,6 +15,9 @@ macOS dotfiles — config files, an install script, a Brewfile, and a daily auto
 # Manual backup (same thing the LaunchAgent runs daily at noon)
 bash scripts/auto-backup.sh
 
+# End-to-end backup health check without committing or pushing
+DOTFILES_AUTO_BACKUP_SKIP_GIT=true bash scripts/auto-backup.sh
+
 # Re-export after installing new brew packages
 brew bundle dump --file=~/Dev/dotfiles/Brewfile --force
 
@@ -26,14 +29,19 @@ launchctl list | grep dotfiles
 
 # View backup log
 tail -20 ~/.local/share/dotfiles-backup/backup.log
+
+# Verify encrypted backup and restore in an isolated temp directory
+bash scripts/test-env-backup.sh
 ```
 
 ## Architecture
 
 - **`install.sh`** — idempotent setup script. Creates symlinks (backing up existing files), loads the LaunchAgent, runs `brew bundle`, and installs Cursor extensions. Safe to re-run.
-- **`scripts/auto-backup.sh`** — run daily by the LaunchAgent. Re-exports Brewfile and Cursor extensions, runs env-backup, commits and pushes if anything changed. Guards against missing tools.
-- **`scripts/env-backup.sh`** — finds all `.env*` files under `~/Dev/`, encrypts them into a single archive with openssl, stores it in iCloud Drive. Passphrase comes from `ENV_BACKUP_PASSPHRASE` in `~/.secrets`.
-- **`scripts/env-restore.sh`** — decrypts the iCloud archive and restores `.env` files to `~/Dev/`. Skips existing files unless `--force` is passed.
+- **`scripts/auto-backup.sh`** — run daily by the LaunchAgent. Re-exports Brewfile and Cursor extensions, runs env-backup, and only auto-commits those two generated snapshots. Manual configuration is never auto-staged. The job exits nonzero if any component fails.
+- **`scripts/env-backup.sh`** — finds all `.env*` files under `~/Dev/`, encrypts them into a validated archive with openssl, then atomically publishes it to iCloud Drive while retaining the previous generation. Passphrase comes from `ENV_BACKUP_PASSPHRASE` in `~/.secrets`.
+- **`scripts/env-restore.sh`** — decrypts the iCloud archive, rejects unsafe archive paths, and restores `.env` files to `~/Dev/`. Skips existing files unless `--force` is passed.
+- **`bin/focus`** — interactive launcher for task-specific CLIamp focus music modes. Symlinked to `~/.local/bin/focus`.
+- **`cliamp/`** — tracked public stations, safe configuration defaults, and setup documentation. The real OAuth-bearing config remains local.
 - **`com.juancamiloqhz.dotfiles-backup.plist`** — macOS LaunchAgent definition. Gets symlinked into `~/Library/LaunchAgents/` by install.sh. Runs the backup script at noon; if asleep, runs on wake.
 - **`iterm2/install.sh`** — standalone installer for iTerm2 + Cobalt2 theme. Installs Oh My Zsh, Powerline fonts, Cobalt2 ZSH theme, tmux, and it2 CLI. Called automatically by the main install.sh. The iTerm2 JSON profile must be imported manually.
 - **`iterm2/juancamiloqhz-cobalt2.json`** — pre-configured iTerm2 profile with Cobalt2 colors, Menlo Regular 15 font, Powerline glyphs, and word-navigation key mappings.
@@ -46,11 +54,13 @@ tail -20 ~/.local/share/dotfiles-backup/backup.log
 | `git/.gitconfig`                          | `~/.gitconfig`                                               |
 | `cursor/settings.json`                    | `~/Library/Application Support/Cursor/User/settings.json`    |
 | `cursor/keybindings.json`                 | `~/Library/Application Support/Cursor/User/keybindings.json` |
+| `bin/focus`                               | `~/.local/bin/focus`                                        |
+| `cliamp/radios.toml`                      | `~/.config/cliamp/radios.toml`                              |
 | `com.juancamiloqhz.dotfiles-backup.plist` | `~/Library/LaunchAgents/`                                    |
 
 ## Secrets
 
-Secrets are **not** stored in this repo. The `.zshrc` sources `~/.secrets` (a local-only file) for shell tokens. Project `.env` files are encrypted and backed up to iCloud Drive by `scripts/env-backup.sh`; the passphrase is `ENV_BACKUP_PASSPHRASE` in `~/.secrets`.
+Secrets are **not** stored in this repo. The `.zshrc` sources `~/.secrets` (a local-only file) for shell tokens. Project `.env` files are encrypted and backed up to iCloud Drive by `scripts/env-backup.sh`; the passphrase is `ENV_BACKUP_PASSPHRASE` in `~/.secrets`. CLIamp's real `config.toml` and YouTube Music credential cache stay local because they contain OAuth secrets and tokens.
 
 ## Conventions
 

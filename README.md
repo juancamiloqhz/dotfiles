@@ -13,6 +13,8 @@ Personal macOS configuration files and setup automation.
 | `cursor/settings.json`                    | Cursor editor settings                                                                 |
 | `cursor/keybindings.json`                 | Cursor keybindings                                                                     |
 | `cursor/extensions.txt`                   | Cursor extension list                                                                  |
+| `bin/focus`                               | Interactive CLIamp launcher for task-specific focus music                              |
+| `cliamp/`                                 | Public CLIamp stations, safe defaults, and setup documentation                         |
 | `scripts/auto-backup.sh`                  | Daily auto-backup script (exports Brewfile + extensions + .env files, commits, pushes) |
 | `scripts/env-backup.sh`                   | Encrypts all `.env` files from `~/Dev/` to iCloud Drive                                |
 | `scripts/env-restore.sh`                  | Restores `.env` files from encrypted iCloud backup                                     |
@@ -28,8 +30,8 @@ echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
 eval "$(/opt/homebrew/bin/brew shellenv)"
 
 # Clone and run
-git clone https://github.com/juancamiloqhz/dotfiles.git ~/dotfiles
-cd ~/dotfiles && chmod +x install.sh && ./install.sh
+git clone https://github.com/juancamiloqhz/dotfiles.git ~/Dev/dotfiles
+cd ~/Dev/dotfiles && chmod +x install.sh && ./install.sh
 ```
 
 `install.sh` backs up existing configs, creates symlinks, installs Brewfile packages, and installs Cursor extensions.
@@ -39,6 +41,10 @@ cd ~/dotfiles && chmod +x install.sh && ./install.sh
 **Shell tokens** (e.g. `GITHUB_REGISTRY_TOKEN`) live in `~/.secrets`, which is sourced by `.zshrc` but never committed to git.
 
 **Project `.env` files** are backed up automatically by `scripts/env-backup.sh`. It scans `~/Dev/` for all `.env*` files, encrypts them with `openssl aes-256-cbc`, and stores the archive in iCloud Drive (`~/Library/Mobile Documents/com~apple~CloudDocs/Backups/env-backup.enc`).
+
+The job exits with an error if the encrypted archive cannot be updated. Check
+the log after setup to confirm that the LaunchAgent can write to iCloud Drive;
+a successful Git commit does not prove that the secret backup succeeded.
 
 ```bash
 # Manual backup
@@ -69,14 +75,28 @@ pbcopy < ~/.ssh/id_ed25519.pub
 
 ```bash
 # After installing new apps
-brew bundle dump --file=~/dotfiles/Brewfile --force
+brew bundle dump --file=~/Dev/dotfiles/Brewfile --force
 
 # After changing Cursor extensions
-cursor --list-extensions > ~/dotfiles/cursor/extensions.txt
+cursor --list-extensions > ~/Dev/dotfiles/cursor/extensions.txt
 
-# After changing shell config — already symlinked, just commit
-cd ~/dotfiles && git add -A && git commit -m "update configs" && git push
+# After changing tracked configuration — review before committing
+cd ~/Dev/dotfiles
+git status --short
+git add <reviewed-files>
+git commit -m "update configs"
+git push
 ```
+
+## Focus music
+
+The `focus` launcher and public station list are tracked in this repository and
+symlinked into place by `install.sh`. Run `focus` for an interactive menu or,
+for example, `focus deep` to start a specific mode.
+
+The real `~/.config/cliamp/config.toml` and YouTube Music credential cache stay
+local because they contain OAuth secrets and mutable application state. See
+[`cliamp/README.md`](cliamp/README.md) for setup and recovery instructions.
 
 ## Auto-backup
 
@@ -87,7 +107,10 @@ A LaunchAgent runs `scripts/auto-backup.sh` daily at 12:00 noon. If the machine 
 1. Re-exports `Brewfile` via `brew bundle dump`
 2. Re-exports Cursor extensions to `cursor/extensions.txt`
 3. Encrypts all `.env` files from `~/Dev/` to iCloud Drive
-4. Commits and pushes any changes to the remote
+4. Commits and pushes only the generated `Brewfile` and Cursor extension list
+
+Manual configuration changes are deliberately left for review. The job exits
+nonzero and records `finished with errors` when any backup component fails.
 
 **Logs:** `~/.local/share/dotfiles-backup/backup.log`
 

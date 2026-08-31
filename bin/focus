@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: focus [mode]
+
+Modes:
+  library  Browse your YouTube Music playlists
+  deep     Beat-light ambient for demanding coding
+  flow     Downtempo electronic for sustained momentum
+  think    Spacious electronic for planning and writing
+  energy   Faster electronic for repetitive execution
+  program  Long-form, human-curated Music for Programming mixes
+  chill    Melodic instrumental chillsynth
+  mellow   Softer eclectic music for light or creative work
+EOF
+}
+
+if (( $# == 0 )); then
+  printf '%s\n' \
+    '' \
+    'Choose music for this work session:' \
+    '  1  Deep      demanding coding; minimal beats' \
+    '  2  Flow      sustained implementation' \
+    '  3  Think     planning, architecture, writing' \
+    '  4  Energy    tests, refactors, repetitive work' \
+    '  5  Program   long-form curated coding mixes' \
+    '  6  Chill     melodic instrumental chillsynth' \
+    '  7  Mellow    light or creative work' \
+    '  8  Library   your YouTube Music playlists' \
+    ''
+  read -r -p 'Mode [1-8, q to quit]: ' choice
+  case "$choice" in
+    1) mode="deep" ;;
+    2) mode="flow" ;;
+    3) mode="think" ;;
+    4) mode="energy" ;;
+    5) mode="program" ;;
+    6) mode="chill" ;;
+    7) mode="mellow" ;;
+    8) mode="library" ;;
+    q|Q) exit 0 ;;
+    *)
+      printf 'Please choose a number from 1 to 8.\n' >&2
+      exit 2
+      ;;
+  esac
+else
+  mode="$1"
+fi
+
+case "$mode" in
+  library)
+    exec cliamp --provider ytmusic
+    ;;
+  deep)
+    exec cliamp --repeat all --eq-preset Flat \
+      "https://somafm.com/dronezone256.pls"
+    ;;
+  flow)
+    exec cliamp --repeat all --eq-preset Flat \
+      "https://somafm.com/groovesalad256.pls"
+    ;;
+  think)
+    exec cliamp --repeat all --eq-preset Flat \
+      "https://somafm.com/deepspaceone.pls"
+    ;;
+  energy)
+    exec cliamp --repeat all --eq-preset Flat \
+      "https://somafm.com/defcon256.pls"
+    ;;
+  program)
+    exec cliamp --repeat all --eq-preset Flat \
+      "https://musicforprogramming.net/rss.xml"
+    ;;
+  chill)
+    exec cliamp --repeat all --eq-preset Flat \
+      "https://stream.nightride.fm/chillsynth.mp3"
+    ;;
+  mellow)
+    exec cliamp --repeat all --eq-preset Flat \
+      "https://stream.radioparadise.com/mellow-320"
+    ;;
+  -h|--help|help)
+    usage
+    ;;
+  *)
+    printf 'Unknown focus mode: %s\n\n' "$mode" >&2
+    usage >&2
+    exit 2
+    ;;
+esac

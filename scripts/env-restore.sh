@@ -1,10 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEV_DIR="$HOME/Dev"
-BACKUP_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Backups"
-BACKUP_FILE="$BACKUP_DIR/env-backup.enc"
+DEV_DIR="${DOTFILES_DEV_DIR:-$HOME/Dev}"
+BACKUP_FILE="${DOTFILES_ENV_BACKUP_FILE:-$HOME/Library/Mobile Documents/com~apple~CloudDocs/Backups/env-backup.enc}"
+SECRETS_FILE="${DOTFILES_SECRETS_FILE:-$HOME/.secrets}"
+ENV_RESTORE_TEMP_DIR=""
 FORCE=false
+
+umask 077
+
+cleanup() {
+  if [ -n "$ENV_RESTORE_TEMP_DIR" ] && [ -d "$ENV_RESTORE_TEMP_DIR" ]; then
+    rm -rf -- "$ENV_RESTORE_TEMP_DIR"
+  fi
+}
+
+trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 for arg in "$@"; do
   case "$arg" in
@@ -19,9 +33,9 @@ if [ ! -f "$BACKUP_FILE" ]; then
   exit 1
 fi
 
-# Get passphrase — from ~/.secrets or prompt
-if [ -f "$HOME/.secrets" ]; then
-  source "$HOME/.secrets"
+# Get passphrase — from the machine-local secrets file or prompt.
+if [ -f "$SECRETS_FILE" ]; then
+  source "$SECRETS_FILE"
 fi
 
 if [ -z "${ENV_BACKUP_PASSPHRASE:-}" ]; then
@@ -29,21 +43,31 @@ if [ -z "${ENV_BACKUP_PASSPHRASE:-}" ]; then
   echo
 fi
 
-TMPDIR_RESTORE="$(mktemp -d)"
+export ENV_BACKUP_PASSPHRASE
+ENV_RESTORE_TEMP_DIR="$(mktemp -d)"
 
 # Decrypt
 if ! openssl enc -aes-256-cbc -d -salt -pbkdf2 \
   -in "$BACKUP_FILE" \
-  -out "$TMPDIR_RESTORE/env-archive.tar" \
-  -pass pass:"$ENV_BACKUP_PASSPHRASE" 2>/dev/null; then
+  -out "$ENV_RESTORE_TEMP_DIR/env-archive.tar" \
+  -pass env:ENV_BACKUP_PASSPHRASE 2>/dev/null; then
   echo "ERROR: Decryption failed. Wrong passphrase?"
-  rm -rf "$TMPDIR_RESTORE"
   exit 1
 fi
 
 # List files in archive
-FILE_LIST=$(tar -tf "$TMPDIR_RESTORE/env-archive.tar")
+FILE_LIST=$(tar -tf "$ENV_RESTORE_TEMP_DIR/env-archive.tar")
 FILE_COUNT=$(echo "$FILE_LIST" | wc -l | tr -d ' ')
+
+# Reject archive paths that could escape ~/Dev before extracting anything.
+while IFS= read -r file; do
+  case "$file" in
+    ""|/*|..|../*|*/../*|*/..)
+      echo "ERROR: Unsafe path in backup archive: $file" >&2
+      exit 1
+      ;;
+  esac
+done <<< "$FILE_LIST"
 
 echo "Found $FILE_COUNT .env file(s) in backup:"
 echo ""
@@ -66,19 +90,20 @@ if [ "$CONFLICTS" -gt 0 ] && [ "$FORCE" = false ]; then
 fi
 
 # Extract
+mkdir -p "$DEV_DIR"
 if [ "$FORCE" = true ]; then
-  tar -xf "$TMPDIR_RESTORE/env-archive.tar" -C "$DEV_DIR"
+  tar -xf "$ENV_RESTORE_TEMP_DIR/env-archive.tar" -C "$DEV_DIR"
   echo ""
   echo "Restored all $FILE_COUNT file(s) to $DEV_DIR/"
 else
   # Extract to temp, then copy only missing files
-  tar -xf "$TMPDIR_RESTORE/env-archive.tar" -C "$TMPDIR_RESTORE/extracted" 2>/dev/null \
-    || (mkdir -p "$TMPDIR_RESTORE/extracted" && tar -xf "$TMPDIR_RESTORE/env-archive.tar" -C "$TMPDIR_RESTORE/extracted")
+  mkdir -p "$ENV_RESTORE_TEMP_DIR/extracted"
+  tar -xf "$ENV_RESTORE_TEMP_DIR/env-archive.tar" -C "$ENV_RESTORE_TEMP_DIR/extracted"
 
   RESTORED=0
   while IFS= read -r file; do
     dst="$DEV_DIR/$file"
-    src="$TMPDIR_RESTORE/extracted/$file"
+    src="$ENV_RESTORE_TEMP_DIR/extracted/$file"
     if [ ! -f "$dst" ]; then
       mkdir -p "$(dirname "$dst")"
       cp "$src" "$dst"
@@ -88,5 +113,3 @@ else
   echo ""
   echo "Restored $RESTORED new file(s) to $DEV_DIR/"
 fi
-
-rm -rf "$TMPDIR_RESTORE"

@@ -1,5 +1,5 @@
 tap "antoniorodr/memo"
-tap "openclaw/tap"
+tap "bjarneo/cliamp"
 tap "steipete/tap"
 tap "supabase/tap"
 tap "withgraphite/tap"
@@ -70,8 +70,9 @@ brew "unzip"
 brew "wget"
 # Feature-rich command-line audio/video downloader
 brew "yt-dlp"
+# A retro terminal music player inspired by Winamp 2.x
+brew "bjarneo/cliamp/cliamp", trusted: true
 # Modern Go client + CLI for the Google Places API (New)
-brew "openclaw/tap/goplaces", link: false
 # Terminal-based AI coding assistant
 cask "claude-code@latest"
 # OpenAI's coding agent that runs in your terminal
@@ -81,8 +82,8 @@ cask "font-jetbrains-mono-nerd-font"
 # Terminal emulator that uses platform-native UI and GPU acceleration
 cask "ghostty"
 # Modern Go client + CLI for the Google Places API (New).
-cask "openclaw/tap/goplaces", trusted: true
 # AI coding agent desktop client
 cask "opencode-desktop"
 # Rust-based terminal
 cask "warp"
+npm "corepack"

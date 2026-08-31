@@ -34,6 +34,19 @@ link_file() {
   ok "Linked $src → $dst"
 }
 
+install_file_if_missing() {
+  local src="$1" dst="$2" mode="$3"
+
+  if [ -e "$dst" ] || [ -L "$dst" ]; then
+    ok "Keeping local file: $dst"
+    return
+  fi
+
+  mkdir -p "$(dirname "$dst")"
+  install -m "$mode" "$src" "$dst"
+  ok "Installed initial $src → $dst"
+}
+
 # ---------------------------------------------------------------------------
 # Symlinks
 # ---------------------------------------------------------------------------
@@ -44,6 +57,15 @@ link_file "$DOTFILES_DIR/zsh/.zshrc"            "$HOME/.zshrc"
 link_file "$DOTFILES_DIR/git/.gitconfig"         "$HOME/.gitconfig"
 link_file "$DOTFILES_DIR/cursor/settings.json"   "$HOME/Library/Application Support/Cursor/User/settings.json"
 link_file "$DOTFILES_DIR/cursor/keybindings.json" "$HOME/Library/Application Support/Cursor/User/keybindings.json"
+link_file "$DOTFILES_DIR/bin/focus"               "$HOME/.local/bin/focus"
+link_file "$DOTFILES_DIR/cliamp/radios.toml"       "$HOME/.config/cliamp/radios.toml"
+
+# CLIamp writes OAuth credentials and mutable UI preferences to config.toml.
+# Seed it on a new machine, but never symlink or overwrite the local copy.
+install_file_if_missing \
+  "$DOTFILES_DIR/cliamp/config.example.toml" \
+  "$HOME/.config/cliamp/config.toml" \
+  600
 
 # ---------------------------------------------------------------------------
 # LaunchAgent (auto-backup)

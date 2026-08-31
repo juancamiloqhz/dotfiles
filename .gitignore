@@ -1,6 +1,17 @@
 .DS_Store
 *.env
+.env
+.env.*
+!.env.example
+!.env.sample
+.secrets
 *.backup
 *.local
+*.enc
 *.swp
 *~
+
+# CLIamp credentials and mutable local state
+cliamp/config.toml
+cliamp/*credentials*.json
+cliamp/*classification*.json

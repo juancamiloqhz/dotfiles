@@ -1,0 +1,20 @@
+# Safe, secret-free defaults for a new machine. install.sh copies this file
+# only when ~/.config/cliamp/config.toml does not already exist.
+
+theme = "nord"
+provider = "ytmusic"
+repeat = "all"
+shuffle = false
+auto_play = false
+eq_preset = "Flat"
+visualizer = "Ascii"
+speed = 1.00
+
+[ytmusic]
+enabled = true
+
+# Keep the real values below in ~/.config/cliamp/config.toml only.
+# Configure them interactively with: cliamp setup
+# client_id = "..."
+# client_secret = "..."
+# cookies_from = "firefox:/path/to/browser/profile"
