@@ -124,6 +124,17 @@ else
   warn "brew not found — skipping Homebrew bundle"
 fi
 
+if command -v cliamp &>/dev/null && command -v yt-dlp &>/dev/null; then
+  info "Generating native CLIamp playlists..."
+  if "$DOTFILES_DIR/bin/music" sync; then
+    ok "CLIamp playlists generated"
+  else
+    warn "CLIamp playlist sync failed — run 'music sync' manually"
+  fi
+else
+  warn "cliamp or yt-dlp not found — skipping music library sync"
+fi
+
 # ---------------------------------------------------------------------------
 # Cursor extensions
 # ---------------------------------------------------------------------------

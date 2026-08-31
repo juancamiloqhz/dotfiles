@@ -220,6 +220,7 @@ Usage:
   music <path...>               Open a submenu or play a catalog entry
   music list                    Print the complete catalog
   music doctor                  Validate the catalog
+  music sync                    Generate native CLIamp playlists
   music help                    Show this help
 
 Examples:
@@ -228,6 +229,7 @@ Examples:
   music source productivity-fm
   music source soma-fm drone-zone
   music browse library
+  music sync
 EOF
 }
 
@@ -434,6 +436,11 @@ case "${1:-}" in
     ;;
   doctor)
     printf 'music catalog is valid\n'
+    exit 0
+    ;;
+  sync)
+    [ "$#" -eq 1 ] || fail "usage: music sync"
+    "$DOTFILES_DIR/scripts/sync-music-library.sh"
     exit 0
     ;;
 esac

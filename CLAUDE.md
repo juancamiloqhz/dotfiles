@@ -35,6 +35,9 @@ bash scripts/test-env-backup.sh
 
 # Validate the music hierarchy and launcher behavior
 bash scripts/test-music.sh
+
+# Verify native CLIamp playlist generation in an isolated config directory
+bash scripts/test-music-sync.sh
 ```
 
 ## Architecture
@@ -46,6 +49,7 @@ bash scripts/test-music.sh
 - **`bin/music`** — generic hierarchical CLIamp launcher. It resolves arbitrary catalog paths, provider actions, URLs, and dynamic YouTube channel menus. Symlinked to `~/.local/bin/music`.
 - **`music/catalog.tsv`** — data model for the complete music hierarchy. Menu nesting and playable sources belong here instead of in Bash routing code.
 - **`music/cliamp/`** — tracked public stations and safe configuration defaults. The real OAuth-bearing config remains local.
+- **`scripts/sync-music-library.sh`** — atomically generates categorized native CLIamp playlists from the catalog, resolves PLS streams, and refreshes YouTube channel entries. It only overwrites files carrying its management marker.
 - **`com.juancamiloqhz.dotfiles-backup.plist`** — macOS LaunchAgent definition. Gets symlinked into `~/Library/LaunchAgents/` by install.sh. Runs the backup script at noon; if asleep, runs on wake.
 - **`iterm2/install.sh`** — standalone installer for iTerm2 + Cobalt2 theme. Installs Oh My Zsh, Powerline fonts, Cobalt2 ZSH theme, tmux, and it2 CLI. Called automatically by the main install.sh. The iTerm2 JSON profile must be imported manually.
 - **`iterm2/juancamiloqhz-cobalt2.json`** — pre-configured iTerm2 profile with Cobalt2 colors, Menlo Regular 15 font, Powerline glyphs, and word-navigation key mappings.

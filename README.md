@@ -98,10 +98,13 @@ music focus deep
 music source productivity-fm
 music source soma-fm drone-zone
 music browse library
+music sync
 ```
 
 The hierarchy lives in `music/catalog.tsv`, so new nested sources can be added
 without modifying the Bash router. Validate catalog changes with `music doctor`.
+Run `music sync` after catalog changes or when you want fresh Productivity FM
+uploads, then use plain `cliamp` and browse **Local Playlists**.
 
 The real `~/.config/cliamp/config.toml` and YouTube Music credential cache stay
 local because they contain OAuth secrets and mutable application state. See

@@ -15,7 +15,19 @@ music focus deep
 music source productivity-fm
 music source soma-fm drone-zone
 music browse library
+music sync
 ```
+
+For everyday use, synchronize once and then open CLIamp directly:
+
+```bash
+music sync
+cliamp
+```
+
+CLIamp automatically loads the generated playlists under **Local Playlists**.
+Their names use category prefixes such as `FOCUS · Deep` and
+`SOURCE · Productivity FM`, which keeps the flat native list grouped visually.
 
 ## Architecture
 
@@ -23,6 +35,8 @@ music browse library
 - `catalog.tsv` defines the complete hierarchy and every playable target.
 - `cliamp/radios.toml` exposes the direct radio stations inside CLIamp.
 - `cliamp/config.example.toml` supplies safe defaults on a new machine.
+- `../scripts/sync-music-library.sh` generates native CLIamp playlists without
+  overwriting user-owned files.
 
 The catalog has five tab-separated fields:
 
@@ -44,7 +58,18 @@ Every nested entry needs a parent `menu` entry. Validate changes with:
 ```bash
 music doctor
 bash scripts/test-music.sh
+bash scripts/test-music-sync.sh
 ```
+
+## Native CLIamp playlists
+
+`music sync` generates six focus playlists and one playlist for each top-level
+source. It resolves PLS files to their actual stream endpoints and refreshes the
+latest Productivity FM uploads before publishing anything.
+
+Generated files begin with a management marker and are recorded in a local
+manifest. Synchronization is atomic and refuses to replace a playlist without
+that marker. Files you create yourself remain untouched.
 
 ## Adding a source
 
