@@ -12,6 +12,6 @@
 *~
 
 # CLIamp credentials and mutable local state
-cliamp/config.toml
-cliamp/*credentials*.json
-cliamp/*classification*.json
+music/cliamp/config.toml
+music/cliamp/*credentials*.json
+music/cliamp/*classification*.json

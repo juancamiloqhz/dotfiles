@@ -1,0 +1,25 @@
+# Human-curated stations used by the music launcher and CLIamp Radio provider.
+
+[[station]]
+name = "FOCUS · Deep — SomaFM Drone Zone"
+url = "https://somafm.com/dronezone256.pls"
+
+[[station]]
+name = "FOCUS · Flow — SomaFM Groove Salad"
+url = "https://somafm.com/groovesalad256.pls"
+
+[[station]]
+name = "FOCUS · Think — SomaFM Deep Space One"
+url = "https://somafm.com/deepspaceone.pls"
+
+[[station]]
+name = "FOCUS · Energy — SomaFM DEF CON Radio"
+url = "https://somafm.com/defcon256.pls"
+
+[[station]]
+name = "FOCUS · Chill — Nightride Chillsynth"
+url = "https://stream.nightride.fm/chillsynth.mp3"
+
+[[station]]
+name = "FOCUS · Mellow — Radio Paradise"
+url = "https://stream.radioparadise.com/mellow-320"

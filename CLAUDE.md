@@ -32,6 +32,9 @@ tail -20 ~/.local/share/dotfiles-backup/backup.log
 
 # Verify encrypted backup and restore in an isolated temp directory
 bash scripts/test-env-backup.sh
+
+# Validate the music hierarchy and launcher behavior
+bash scripts/test-music.sh
 ```
 
 ## Architecture
@@ -40,8 +43,9 @@ bash scripts/test-env-backup.sh
 - **`scripts/auto-backup.sh`** — run daily by the LaunchAgent. Re-exports Brewfile and Cursor extensions, runs env-backup, and only auto-commits those two generated snapshots. Manual configuration is never auto-staged. The job exits nonzero if any component fails.
 - **`scripts/env-backup.sh`** — finds all `.env*` files under `~/Dev/`, encrypts them into a validated archive with openssl, then atomically publishes it to iCloud Drive while retaining the previous generation. Passphrase comes from `ENV_BACKUP_PASSPHRASE` in `~/.secrets`.
 - **`scripts/env-restore.sh`** — decrypts the iCloud archive, rejects unsafe archive paths, and restores `.env` files to `~/Dev/`. Skips existing files unless `--force` is passed.
-- **`bin/focus`** — interactive launcher for task-specific CLIamp focus music modes. Symlinked to `~/.local/bin/focus`.
-- **`cliamp/`** — tracked public stations, safe configuration defaults, and setup documentation. The real OAuth-bearing config remains local.
+- **`bin/music`** — generic hierarchical CLIamp launcher. It resolves arbitrary catalog paths, provider actions, URLs, and dynamic YouTube channel menus. Symlinked to `~/.local/bin/music`.
+- **`music/catalog.tsv`** — data model for the complete music hierarchy. Menu nesting and playable sources belong here instead of in Bash routing code.
+- **`music/cliamp/`** — tracked public stations and safe configuration defaults. The real OAuth-bearing config remains local.
 - **`com.juancamiloqhz.dotfiles-backup.plist`** — macOS LaunchAgent definition. Gets symlinked into `~/Library/LaunchAgents/` by install.sh. Runs the backup script at noon; if asleep, runs on wake.
 - **`iterm2/install.sh`** — standalone installer for iTerm2 + Cobalt2 theme. Installs Oh My Zsh, Powerline fonts, Cobalt2 ZSH theme, tmux, and it2 CLI. Called automatically by the main install.sh. The iTerm2 JSON profile must be imported manually.
 - **`iterm2/juancamiloqhz-cobalt2.json`** — pre-configured iTerm2 profile with Cobalt2 colors, Menlo Regular 15 font, Powerline glyphs, and word-navigation key mappings.
@@ -54,8 +58,8 @@ bash scripts/test-env-backup.sh
 | `git/.gitconfig`                          | `~/.gitconfig`                                               |
 | `cursor/settings.json`                    | `~/Library/Application Support/Cursor/User/settings.json`    |
 | `cursor/keybindings.json`                 | `~/Library/Application Support/Cursor/User/keybindings.json` |
-| `bin/focus`                               | `~/.local/bin/focus`                                        |
-| `cliamp/radios.toml`                      | `~/.config/cliamp/radios.toml`                              |
+| `bin/music`                               | `~/.local/bin/music`                                        |
+| `music/cliamp/radios.toml`                | `~/.config/cliamp/radios.toml`                              |
 | `com.juancamiloqhz.dotfiles-backup.plist` | `~/Library/LaunchAgents/`                                    |
 
 ## Secrets
@@ -64,6 +68,7 @@ Secrets are **not** stored in this repo. The `.zshrc` sources `~/.secrets` (a lo
 
 ## Conventions
 
-- Paths assume the repo lives at `~/Dev/dotfiles`. The plist and auto-backup script both hardcode this.
+- Paths assume the repo lives at `~/Dev/dotfiles`. The LaunchAgent plist hardcodes this; repository scripts derive their paths at runtime.
 - Shell scripts use `set -euo pipefail`.
 - `install.sh` uses a `link_file` helper that checks for existing symlinks before acting and backs up conflicts to `~/.dotfiles-backup/<timestamp>/`.
+- Music navigation is data-driven. Add categories and sources to `music/catalog.tsv`; do not add source-specific routing branches to `bin/music` unless a new action type is required.

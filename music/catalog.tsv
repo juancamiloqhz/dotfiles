@@ -1,0 +1,24 @@
+# path	label	description	action	target
+focus	Focus	Choose music by the mental state your work needs	menu	-
+focus/deep	Deep	Minimal-beat ambient for demanding coding	alias	source/soma-fm/drone-zone
+focus/flow	Flow	Downtempo electronic for sustained implementation	alias	source/soma-fm/groove-salad
+focus/think	Think	Spacious ambient for planning, architecture, and writing	alias	source/soma-fm/deep-space-one
+focus/energy	Energy	Faster electronic for tests, refactors, and repetitive work	alias	source/soma-fm/def-con
+focus/chill	Chill	Melodic instrumental chillsynth	alias	source/nightride-fm/chillsynth
+focus/mellow	Mellow	Soft eclectic music for lighter creative work	alias	source/radio-paradise/mellow
+source	Sources	Choose a publisher, station network, or curated channel	menu	-
+source/productivity-fm	Productivity FM	Choose from the channel's latest coding and focus mixes	youtube-channel	https://www.youtube.com/@productivityonyt/videos
+source/soma-fm	SomaFM	Listener-supported, human-curated internet radio	menu	-
+source/soma-fm/drone-zone	Drone Zone	Atmospheric ambient space music	url	https://somafm.com/dronezone256.pls
+source/soma-fm/groove-salad	Groove Salad	Ambient and downtempo instrumentals	url	https://somafm.com/groovesalad256.pls
+source/soma-fm/deep-space-one	Deep Space One	Deep ambient electronic soundscapes	url	https://somafm.com/deepspaceone.pls
+source/soma-fm/def-con	DEF CON Radio	Up-tempo electronic and hacker-conference energy	url	https://somafm.com/defcon256.pls
+source/music-for-programming	Music for Programming	Long-form mixes curated for programming	url	https://musicforprogramming.net/rss.xml
+source/nightride-fm	Nightride FM	Synthwave and chillsynth radio	menu	-
+source/nightride-fm/chillsynth	Chillsynth	Melodic instrumental synthwave	url	https://stream.nightride.fm/chillsynth.mp3
+source/radio-paradise	Radio Paradise	Eclectic listener-supported radio	menu	-
+source/radio-paradise/mellow	Mellow Mix	Softer eclectic selections	url	https://stream.radioparadise.com/mellow-320
+browse	Browse	Open a CLIamp provider and explore interactively	menu	-
+browse/library	YouTube Music Library	Your playlists, albums, and recommendations	provider	ytmusic
+browse/youtube	YouTube	Search the wider YouTube catalog	provider	youtube
+browse/radio	Radio Directory	Browse CLIamp's internet radio directory	provider	radio

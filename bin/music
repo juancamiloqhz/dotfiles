@@ -1,0 +1,469 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+resolve_script_dir() {
+  local source_path="${BASH_SOURCE[0]}"
+  local source_dir
+
+  while [ -L "$source_path" ]; do
+    source_dir="$(cd -P "$(dirname "$source_path")" && pwd)"
+    source_path="$(readlink "$source_path")"
+    case "$source_path" in
+      /*) ;;
+      *) source_path="$source_dir/$source_path" ;;
+    esac
+  done
+
+  cd -P "$(dirname "$source_path")" && pwd
+}
+
+SCRIPT_DIR="$(resolve_script_dir)"
+DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+CATALOG_FILE="${MUSIC_CATALOG_FILE:-$DOTFILES_DIR/music/catalog.tsv}"
+CLIAMP_BIN="${MUSIC_CLIAMP_BIN:-cliamp}"
+YTDLP_BIN="${MUSIC_YTDLP_BIN:-yt-dlp}"
+YOUTUBE_LIMIT="${MUSIC_YOUTUBE_LIMIT:-10}"
+DRY_RUN="${MUSIC_DRY_RUN:-false}"
+MUSIC_TEMP_DIR=""
+
+cleanup() {
+  if [ -n "$MUSIC_TEMP_DIR" ] && [ -d "$MUSIC_TEMP_DIR" ]; then
+    rm -rf -- "$MUSIC_TEMP_DIR"
+  fi
+}
+
+trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+fail() {
+  printf 'music: %s\n' "$1" >&2
+  exit 1
+}
+
+catalog_doctor() {
+  [ -f "$CATALOG_FILE" ] || fail "catalog not found: $CATALOG_FILE"
+
+  awk -F '\t' '
+    BEGIN { errors = 0 }
+
+    /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
+
+    NF != 5 {
+      printf "catalog:%d: expected 5 tab-separated fields, found %d\n", NR, NF > "/dev/stderr"
+      errors++
+      next
+    }
+
+    {
+      path = $1
+      label = $2
+      description = $3
+      action = $4
+      target = $5
+
+      if (label == "" || description == "") {
+        printf "catalog:%d: label and description are required: %s\n", NR, path > "/dev/stderr"
+        errors++
+      }
+
+      if (path !~ /^[a-z0-9][a-z0-9-]*(\/[a-z0-9][a-z0-9-]*)*$/) {
+        printf "catalog:%d: invalid path: %s\n", NR, path > "/dev/stderr"
+        errors++
+      }
+
+      if (path in nodes) {
+        printf "catalog:%d: duplicate path: %s\n", NR, path > "/dev/stderr"
+        errors++
+      }
+      nodes[path] = 1
+      actions[path] = action
+      targets[path] = target
+
+      if (action !~ /^(alias|menu|provider|url|youtube-channel)$/) {
+        printf "catalog:%d: unsupported action: %s\n", NR, action > "/dev/stderr"
+        errors++
+      }
+
+      if (action == "menu" && target != "-") {
+        printf "catalog:%d: menu target must be -: %s\n", NR, path > "/dev/stderr"
+        errors++
+      }
+
+      if (action != "menu" && (target == "" || target == "-")) {
+        printf "catalog:%d: action requires a target: %s\n", NR, path > "/dev/stderr"
+        errors++
+      }
+
+      if ((action == "url" || action == "youtube-channel") && target !~ /^https:\/\//) {
+        printf "catalog:%d: URL action requires an https target: %s\n", NR, path > "/dev/stderr"
+        errors++
+      }
+
+      if (action == "provider" && target !~ /^[a-z0-9-]+$/) {
+        printf "catalog:%d: invalid provider target: %s\n", NR, target > "/dev/stderr"
+        errors++
+      }
+
+      if (action == "alias" && target !~ /^[a-z0-9][a-z0-9-]*(\/[a-z0-9][a-z0-9-]*)*$/) {
+        printf "catalog:%d: invalid alias target: %s\n", NR, target > "/dev/stderr"
+        errors++
+      }
+    }
+
+    END {
+      for (path in nodes) {
+        if (path ~ /\//) {
+          parent = path
+          sub("/[^/]+$", "", parent)
+          if (!(parent in nodes)) {
+            printf "catalog: missing parent %s for %s\n", parent, path > "/dev/stderr"
+            errors++
+          } else if (actions[parent] != "menu") {
+            printf "catalog: parent is not a menu: %s\n", parent > "/dev/stderr"
+            errors++
+          }
+          children[parent]++
+        }
+      }
+
+      for (path in nodes) {
+        if (actions[path] == "menu" && children[path] == 0) {
+          printf "catalog: menu has no children: %s\n", path > "/dev/stderr"
+          errors++
+        }
+
+        if (actions[path] == "alias") {
+          target = targets[path]
+          if (!(target in nodes)) {
+            printf "catalog: alias target does not exist: %s -> %s\n", path, target > "/dev/stderr"
+            errors++
+          } else if (actions[target] == "menu" || actions[target] == "alias") {
+            printf "catalog: alias must target a playable node: %s -> %s\n", path, target > "/dev/stderr"
+            errors++
+          }
+        }
+      }
+      exit errors > 0 ? 1 : 0
+    }
+  ' "$CATALOG_FILE"
+}
+
+load_node() {
+  local wanted_path="$1"
+  local path label description action target
+
+  while IFS=$'\t' read -r path label description action target; do
+    case "$path" in
+      ""|\#*) continue ;;
+    esac
+
+    if [ "$path" = "$wanted_path" ]; then
+      NODE_PATH="$path"
+      NODE_LABEL="$label"
+      NODE_DESCRIPTION="$description"
+      NODE_ACTION="$action"
+      NODE_TARGET="$target"
+      return 0
+    fi
+  done < "$CATALOG_FILE"
+
+  return 1
+}
+
+load_children() {
+  local parent_path="$1"
+  local prefix path label description action target remainder
+
+  CHILD_PATHS=()
+  CHILD_LABELS=()
+  CHILD_DESCRIPTIONS=()
+
+  if [ -n "$parent_path" ]; then
+    prefix="$parent_path/"
+  else
+    prefix=""
+  fi
+
+  while IFS=$'\t' read -r path label description action target; do
+    case "$path" in
+      ""|\#*) continue ;;
+    esac
+
+    if [ -z "$parent_path" ]; then
+      case "$path" in
+        */*) continue ;;
+      esac
+    else
+      case "$path" in
+        "$prefix"*) ;;
+        *) continue ;;
+      esac
+
+      remainder="${path#"$prefix"}"
+      case "$remainder" in
+        */*) continue ;;
+      esac
+    fi
+
+    CHILD_PATHS+=("$path")
+    CHILD_LABELS+=("$label")
+    CHILD_DESCRIPTIONS+=("$description")
+  done < "$CATALOG_FILE"
+}
+
+print_usage() {
+  cat <<'EOF'
+Usage:
+  music                         Open the interactive music menu
+  music <path...>               Open a submenu or play a catalog entry
+  music list                    Print the complete catalog
+  music doctor                  Validate the catalog
+  music help                    Show this help
+
+Examples:
+  music focus
+  music focus deep
+  music source productivity-fm
+  music source soma-fm drone-zone
+  music browse library
+EOF
+}
+
+print_catalog() {
+  awk -F '\t' '
+    /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
+    {
+      count = split($1, parts, "/")
+      indent = ""
+      for (i = 1; i < count; i++) {
+        indent = indent "  "
+      }
+      printf "%s%-22s %s\n", indent, parts[count], $3
+    }
+  ' "$CATALOG_FILE"
+}
+
+run_cliamp() {
+  local arg
+
+  if [ "$DRY_RUN" = true ]; then
+    printf 'cliamp'
+    for arg in "$@"; do
+      printf ' %q' "$arg"
+    done
+    printf '\n'
+    return 0
+  fi
+
+  command -v "$CLIAMP_BIN" >/dev/null 2>&1 || fail "cliamp is not installed"
+  exec "$CLIAMP_BIN" "$@"
+}
+
+play_youtube_channel() {
+  local channel_label="$1"
+  local channel_url="$2"
+  local feed_file choice index selected_url
+  local video_url video_title
+  local -a video_urls video_titles
+
+  if [ "$DRY_RUN" = true ]; then
+    printf 'yt-dlp: browse up to %s recent videos from %s\n' "$YOUTUBE_LIMIT" "$channel_url"
+    printf 'cliamp: play the selected YouTube URL\n'
+    return 0
+  fi
+
+  case "$YOUTUBE_LIMIT" in
+    ''|*[!0-9]*) fail "MUSIC_YOUTUBE_LIMIT must be a positive integer" ;;
+    0) fail "MUSIC_YOUTUBE_LIMIT must be greater than zero" ;;
+  esac
+
+  command -v "$YTDLP_BIN" >/dev/null 2>&1 || fail "yt-dlp is required for YouTube channel sources"
+
+  MUSIC_TEMP_DIR="$(mktemp -d)"
+  feed_file="$MUSIC_TEMP_DIR/youtube-channel.tsv"
+
+  printf 'Loading recent uploads...\n'
+  if ! "$YTDLP_BIN" \
+    --flat-playlist \
+    --playlist-end "$YOUTUBE_LIMIT" \
+    --print $'%(webpage_url)s\t%(title)s' \
+    "$channel_url" > "$feed_file"; then
+    fail "could not load YouTube channel: $channel_url"
+  fi
+
+  video_urls=()
+  video_titles=()
+  while IFS=$'\t' read -r video_url video_title; do
+    [ -n "$video_url" ] || continue
+    video_urls+=("$video_url")
+    video_titles+=("$video_title")
+  done < "$feed_file"
+
+  [ "${#video_urls[@]}" -gt 0 ] || fail "the YouTube channel returned no playable videos"
+
+  printf '\n%s — recent uploads\n\n' "$channel_label"
+  for ((index = 0; index < ${#video_urls[@]}; index++)); do
+    printf '  %2d  %s\n' "$((index + 1))" "${video_titles[$index]}"
+  done
+  printf '\n'
+
+  while true; do
+    read -r -p "Choose [1-${#video_urls[@]}, q to quit]: " choice
+    case "$choice" in
+      q|Q) exit 0 ;;
+      ''|*[!0-9]*) printf 'Choose a listed number.\n' >&2 ;;
+      *)
+        if [ "$choice" -ge 1 ] && [ "$choice" -le "${#video_urls[@]}" ]; then
+          break
+        fi
+        printf 'Choose a listed number.\n' >&2
+        ;;
+    esac
+  done
+
+  selected_url="${video_urls[$((choice - 1))]}"
+  rm -rf -- "$MUSIC_TEMP_DIR"
+  MUSIC_TEMP_DIR=""
+  run_cliamp --repeat all --eq-preset Flat "$selected_url"
+}
+
+execute_node() {
+  case "$NODE_ACTION" in
+    alias)
+      load_node "$NODE_TARGET" || fail "alias target not found: $NODE_TARGET"
+      execute_node
+      ;;
+    provider)
+      run_cliamp --provider "$NODE_TARGET"
+      ;;
+    url)
+      run_cliamp --repeat all --eq-preset Flat "$NODE_TARGET"
+      ;;
+    youtube-channel)
+      play_youtube_channel "$NODE_LABEL" "$NODE_TARGET"
+      ;;
+    menu)
+      fail "cannot execute menu node: $NODE_PATH"
+      ;;
+    *)
+      fail "unsupported catalog action: $NODE_ACTION"
+      ;;
+  esac
+}
+
+parent_path() {
+  case "$1" in
+    */*) printf '%s\n' "${1%/*}" ;;
+    *) printf '\n' ;;
+  esac
+}
+
+open_menu() {
+  local current_path="$1"
+  local title choice index selected_path
+
+  while true; do
+    load_children "$current_path"
+    [ "${#CHILD_PATHS[@]}" -gt 0 ] || fail "menu has no entries: ${current_path:-root}"
+
+    if [ -n "$current_path" ]; then
+      load_node "$current_path" || fail "unknown catalog path: $current_path"
+      title="$NODE_LABEL"
+    else
+      title="Music"
+    fi
+
+    printf '\n%s\n\n' "$title"
+    for ((index = 0; index < ${#CHILD_PATHS[@]}; index++)); do
+      printf '  %2d  %-22s %s\n' \
+        "$((index + 1))" \
+        "${CHILD_LABELS[$index]}" \
+        "${CHILD_DESCRIPTIONS[$index]}"
+    done
+    printf '\n'
+
+    if [ -n "$current_path" ]; then
+      read -r -p "Choose [1-${#CHILD_PATHS[@]}, b back, q quit]: " choice
+    else
+      read -r -p "Choose [1-${#CHILD_PATHS[@]}, q quit]: " choice
+    fi
+
+    case "$choice" in
+      q|Q) exit 0 ;;
+      b|B)
+        if [ -n "$current_path" ]; then
+          current_path="$(parent_path "$current_path")"
+        fi
+        continue
+        ;;
+      ''|*[!0-9]*)
+        printf 'Choose a listed number.\n' >&2
+        continue
+        ;;
+    esac
+
+    if [ "$choice" -lt 1 ] || [ "$choice" -gt "${#CHILD_PATHS[@]}" ]; then
+      printf 'Choose a listed number.\n' >&2
+      continue
+    fi
+
+    selected_path="${CHILD_PATHS[$((choice - 1))]}"
+    load_node "$selected_path" || fail "unknown catalog path: $selected_path"
+
+    if [ "$NODE_ACTION" = menu ]; then
+      current_path="$selected_path"
+    else
+      execute_node
+      return
+    fi
+  done
+}
+
+catalog_doctor
+
+case "${1:-}" in
+  -h|--help|help)
+    print_usage
+    exit 0
+    ;;
+  list)
+    print_catalog
+    exit 0
+    ;;
+  doctor)
+    printf 'music catalog is valid\n'
+    exit 0
+    ;;
+esac
+
+if [ "$#" -eq 0 ]; then
+  open_menu ""
+  exit 0
+fi
+
+requested_path=""
+for segment in "$@"; do
+  case "$segment" in
+    -*|*/*) fail "invalid path segment: $segment" ;;
+  esac
+
+  if [ -n "$requested_path" ]; then
+    requested_path="$requested_path/$segment"
+  else
+    requested_path="$segment"
+  fi
+done
+
+if ! load_node "$requested_path"; then
+  printf 'music: unknown catalog path: %s\n\n' "$requested_path" >&2
+  print_catalog >&2
+  exit 2
+fi
+
+if [ "$NODE_ACTION" = menu ]; then
+  open_menu "$requested_path"
+else
+  execute_node
+fi
