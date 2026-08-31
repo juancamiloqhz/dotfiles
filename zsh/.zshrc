@@ -199,3 +199,6 @@ esac
 export PATH="$PATH:/Users/juancamiloqhz/.lmstudio/bin"
 # End of LM Studio CLI section
 
+# Re-apply the NVM selection after tools such as Hermes modify PATH.
+# This keeps the default Node active while preserving per-project .nvmrc files.
+load-nvmrc

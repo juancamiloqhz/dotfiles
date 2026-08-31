@@ -68,6 +68,8 @@ brew "tree-sitter-cli"
 brew "unzip"
 # Internet file retriever
 brew "wget"
+# Feature-rich command-line audio/video downloader
+brew "yt-dlp"
 # Modern Go client + CLI for the Google Places API (New)
 brew "openclaw/tap/goplaces", link: false
 # Terminal-based AI coding assistant
@@ -84,6 +86,3 @@ cask "openclaw/tap/goplaces", trusted: true
 cask "opencode-desktop"
 # Rust-based terminal
 cask "warp"
-npm "@earendil-works/pi-coding-agent"
-npm "defuddle"
-npm "opencode-ai"
