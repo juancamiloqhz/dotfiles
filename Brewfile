@@ -72,7 +72,6 @@ brew "wget"
 brew "yt-dlp"
 # A retro terminal music player inspired by Winamp 2.x
 brew "bjarneo/cliamp/cliamp", trusted: true
-# Modern Go client + CLI for the Google Places API (New)
 # Terminal-based AI coding assistant
 cask "claude-code@latest"
 # OpenAI's coding agent that runs in your terminal
@@ -81,9 +80,7 @@ cask "font-fira-code"
 cask "font-jetbrains-mono-nerd-font"
 # Terminal emulator that uses platform-native UI and GPU acceleration
 cask "ghostty"
-# Modern Go client + CLI for the Google Places API (New).
 # AI coding agent desktop client
 cask "opencode-desktop"
 # Rust-based terminal
 cask "warp"
-npm "corepack"
