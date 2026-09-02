@@ -58,6 +58,8 @@ brew "openjdk@25"
 brew "pnpm"
 # PDF rendering library (based on the xpdf-3.0 code base)
 brew "poppler"
+# Safe, concurrent, practical language
+brew "rust"
 # Modernized, complete, self-contained TeX/LaTeX engine
 brew "tectonic"
 # Terminal multiplexer
