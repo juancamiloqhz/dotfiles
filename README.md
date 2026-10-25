@@ -13,8 +13,6 @@ Personal macOS configuration files and setup automation.
 | `cursor/settings.json`                    | Cursor editor settings                                                                 |
 | `cursor/keybindings.json`                 | Cursor keybindings                                                                     |
 | `cursor/extensions.txt`                   | Cursor extension list                                                                  |
-| `bin/music`                               | Hierarchical, data-driven CLIamp music launcher                                        |
-| `music/`                                  | Music catalog, public stations, safe defaults, and setup documentation                 |
 | `scripts/auto-backup.sh`                  | Daily auto-backup script (exports Brewfile + extensions + .env files, commits, pushes) |
 | `scripts/env-backup.sh`                   | Encrypts all `.env` files from `~/Dev/` to iCloud Drive                                |
 | `scripts/env-restore.sh`                  | Restores `.env` files from encrypted iCloud backup                                     |
@@ -88,28 +86,6 @@ git commit -m "update configs"
 git push
 ```
 
-## Music
-
-The `music` launcher organizes listening by work state, source, or provider.
-Run `music` for the interactive hierarchy, or address a catalog path directly:
-
-```bash
-music focus deep
-music source productivity-fm
-music source soma-fm drone-zone
-music browse library
-music sync
-```
-
-The hierarchy lives in `music/catalog.tsv`, so new nested sources can be added
-without modifying the Bash router. Validate catalog changes with `music doctor`.
-Run `music sync` after catalog changes or when you want fresh Productivity FM
-uploads, then use plain `cliamp` and browse **Local Playlists**.
-
-The real `~/.config/cliamp/config.toml` and YouTube Music credential cache stay
-local because they contain OAuth secrets and mutable application state. See
-[`music/README.md`](music/README.md) for architecture and extension instructions.
-
 ## Auto-backup
 
 A LaunchAgent runs `scripts/auto-backup.sh` daily at 12:00 noon. If the machine is asleep, macOS runs it on the next wake.
@@ -149,4 +125,3 @@ launchctl load   ~/Library/LaunchAgents/com.juancamiloqhz.dotfiles-backup.plist
 5. Generate SSH keys and add to GitHub
 6. Set up crontab jobs (see `crontab/README.md`)
 7. Sign into apps manually: 1Password, Cursor, Raycast, Slack, Figma
-8. Run `cliamp setup` to restore private YouTube Music access for `music`

@@ -34,52 +34,16 @@ link_file() {
   ok "Linked $src → $dst"
 }
 
-remove_legacy_link() {
-  local dst="$1" old_src="$2"
-
-  if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$old_src" ]; then
-    rm "$dst"
-    ok "Removed obsolete managed link: $dst"
-  fi
-}
-
-install_file_if_missing() {
-  local src="$1" dst="$2" mode="$3"
-
-  if [ -e "$dst" ] || [ -L "$dst" ]; then
-    ok "Keeping local file: $dst"
-    return
-  fi
-
-  mkdir -p "$(dirname "$dst")"
-  install -m "$mode" "$src" "$dst"
-  ok "Installed initial $src → $dst"
-}
-
 # ---------------------------------------------------------------------------
 # Symlinks
 # ---------------------------------------------------------------------------
 
 info "Creating symlinks..."
 
-"$DOTFILES_DIR/bin/music" doctor >/dev/null
-
 link_file "$DOTFILES_DIR/zsh/.zshrc"            "$HOME/.zshrc"
 link_file "$DOTFILES_DIR/git/.gitconfig"         "$HOME/.gitconfig"
 link_file "$DOTFILES_DIR/cursor/settings.json"   "$HOME/Library/Application Support/Cursor/User/settings.json"
 link_file "$DOTFILES_DIR/cursor/keybindings.json" "$HOME/Library/Application Support/Cursor/User/keybindings.json"
-remove_legacy_link "$HOME/.local/bin/focus" "$DOTFILES_DIR/bin/focus"
-remove_legacy_link "$HOME/.config/cliamp/radios.toml" "$DOTFILES_DIR/cliamp/radios.toml"
-link_file "$DOTFILES_DIR/bin/music"                        "$HOME/.local/bin/music"
-link_file "$DOTFILES_DIR/music/cliamp/radios.toml"         "$HOME/.config/cliamp/radios.toml"
-
-# CLIamp writes OAuth credentials and mutable UI preferences to config.toml.
-# Seed it on a new machine, but never symlink or overwrite the local copy.
-install_file_if_missing \
-  "$DOTFILES_DIR/music/cliamp/config.example.toml" \
-  "$HOME/.config/cliamp/config.toml" \
-  600
-
 # ---------------------------------------------------------------------------
 # LaunchAgent (auto-backup)
 # ---------------------------------------------------------------------------
@@ -122,17 +86,6 @@ if command -v brew &>/dev/null; then
   ok "Homebrew packages installed"
 else
   warn "brew not found — skipping Homebrew bundle"
-fi
-
-if command -v cliamp &>/dev/null && command -v yt-dlp &>/dev/null; then
-  info "Generating native CLIamp playlists..."
-  if "$DOTFILES_DIR/bin/music" sync; then
-    ok "CLIamp playlists generated"
-  else
-    warn "CLIamp playlist sync failed — run 'music sync' manually"
-  fi
-else
-  warn "cliamp or yt-dlp not found — skipping music library sync"
 fi
 
 # ---------------------------------------------------------------------------
