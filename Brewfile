@@ -1,5 +1,4 @@
 tap "antoniorodr/memo"
-tap "bjarneo/cliamp"
 tap "steipete/tap"
 tap "supabase/tap"
 tap "withgraphite/tap"
@@ -74,8 +73,6 @@ brew "unzip"
 brew "wget"
 # Feature-rich command-line audio/video downloader
 brew "yt-dlp"
-# A retro terminal music player inspired by Winamp 2.x
-brew "bjarneo/cliamp/cliamp", trusted: true
 # Terminal-based AI coding assistant
 cask "claude-code@latest"
 # OpenAI's coding agent that runs in your terminal

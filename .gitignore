@@ -10,8 +10,3 @@
 *.enc
 *.swp
 *~
-
-# CLIamp credentials and mutable local state
-music/cliamp/config.toml
-music/cliamp/*credentials*.json
-music/cliamp/*classification*.json
