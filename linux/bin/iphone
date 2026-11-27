@@ -95,16 +95,16 @@ do_import() {
   fi
   local dest="$episode/originals"
 
-  local mounted_here=0
-  mountpoint -q "$MNT" || mounted_here=1
+  # Globals, not locals: the EXIT trap runs after this function's scope is gone.
+  MOUNTED_HERE=0
+  mountpoint -q "$MNT" || MOUNTED_HERE=1
   do_mount
-  local tmp=""
-  # shellcheck disable=SC2064
-  trap 'rm -f "$tmp"; [ $mounted_here -eq 1 ] && do_unmount' EXIT
+  PARTIAL=""
+  trap 'rm -f "${PARTIAL:-}"; if [ "${MOUNTED_HERE:-0}" -eq 1 ]; then do_unmount; fi' EXIT
 
-  local exts=(-iname '*.mov' -o -iname '*.mp4')
+  local photos=0
   if gum confirm "Include photos?" --default=false; then
-    exts+=(-o -iname '*.heic' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png')
+    photos=1
     if ! command -v exiftool >/dev/null; then
       echo "Warning: exiftool is not installed, so photo names use the phone's file time," >&2
       echo "not the time the photo was taken. Install it with: sudo pacman -S perl-image-exiftool" >&2
@@ -112,23 +112,54 @@ do_import() {
   fi
 
   # Newest first: "epoch<TAB>bytes<TAB>path relative to DCIM".
-  local rows
-  rows=$(find "$MNT/DCIM" -type f \( "${exts[@]}" \) -printf '%T@\t%s\t%P\n' \
-           | sort -rn | head -n "$LIST_LIMIT")
-  if [ -z "$rows" ]; then
+  local all
+  all=$(find "$MNT/DCIM" -type f \( -iname '*.mov' -o -iname '*.mp4' -o -iname '*.heic' \
+          -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \) \
+          -printf '%T@\t%s\t%P\n' | sort -rn)
+
+  # A video with a photo of the same name next to it is the motion part of a Live Photo.
+  local -A still=()
+  local epoch size rel
+  while IFS=$'\t' read -r epoch size rel; do
+    case "${rel,,}" in *.heic|*.jpg|*.jpeg) still["${rel%.*}"]=1 ;; esac
+  done <<< "$all"
+
+  local labels=() kind mark count=0
+  while IFS=$'\t' read -r epoch size rel; do
+    [ -n "$rel" ] || continue
+    case "${rel,,}" in
+      *.mov|*.mp4)
+        if [ -n "${still[${rel%.*}]:-}" ]; then
+          [ $photos -eq 1 ] || continue
+          kind="live photo"
+        else
+          kind="video"
+        fi
+        ;;
+      *)
+        [ $photos -eq 1 ] || continue
+        kind="photo"
+        ;;
+    esac
+    mark=""
+    if compgen -G "$dest/$(basename "$rel")" >/dev/null \
+       || compgen -G "$dest/[0-9]*_[0-9]*_$(basename "$rel")" >/dev/null; then
+      mark="✓ imported"
+    fi
+    labels+=("$(printf '%-24s  %s  %8s  %-10s  %s' "$rel" \
+      "$(date -d "@${epoch%.*}" '+%b %d %H:%M')" "$(human_size "$size")" "$kind" "$mark")")
+    count=$((count + 1))
+    [ "$count" -lt "$LIST_LIMIT" ] || break
+  done <<< "$all"
+
+  if [ ${#labels[@]} -eq 0 ]; then
     echo "No matching files on the phone."
     exit 0
   fi
 
-  local labels=() epoch size rel
-  while IFS=$'\t' read -r epoch size rel; do
-    labels+=("$(printf '%-24s  %s  %8s' "$rel" \
-      "$(date -d "@${epoch%.*}" '+%b %d %H:%M')" "$(human_size "$size")")")
-  done <<< "$rows"
-
   local picked
   picked=$(gum choose --no-limit --height 20 \
-    --header "Pick files for $(basename "$episode") (space = select, enter = confirm)" \
+    --header "Pick files for $(basename "$episode") (x = select, enter = confirm, esc = cancel)" \
     "${labels[@]}") || true
   if [ -z "$picked" ]; then
     echo "Nothing selected."
@@ -165,22 +196,22 @@ do_import() {
     if [ -e "$dest/$final" ] || [ -e "$dest/$base" ]; then
       status="skipped (already in originals)"
     else
-      tmp="$dest/.$final.partial"
+      PARTIAL="$dest/.$final.partial"
       # Read the phone file once: write the copy and hash the same bytes.
       gum spin --title "Copying $base ($(human_size "$size"))..." -- \
-        bash -c 'tee "$1" < "$2" | sha256sum > "$3"' _ "$tmp" "$src" "$sumfile"
+        bash -c 'tee "$1" < "$2" | sha256sum > "$3"' _ "$PARTIAL" "$src" "$sumfile"
       src_sum=$(cut -d' ' -f1 "$sumfile")
-      gum spin --title "Verifying $base..." -- bash -c 'sha256sum "$1" > "$2"' _ "$tmp" "$sumfile"
+      gum spin --title "Verifying $base..." -- bash -c 'sha256sum "$1" > "$2"' _ "$PARTIAL" "$sumfile"
       dst_sum=$(cut -d' ' -f1 "$sumfile")
       if [ "$src_sum" = "$dst_sum" ]; then
-        touch -r "$src" "$tmp"
-        mv -n "$tmp" "$dest/$final"
+        touch -r "$src" "$PARTIAL"
+        mv -n "$PARTIAL" "$dest/$final"
         status="ok, sha256 $src_sum"
       else
-        rm -f "$tmp"
+        rm -f "$PARTIAL"
         status="FAILED: checksum mismatch, copy removed"
       fi
-      tmp=""
+      PARTIAL=""
     fi
     echo "$base: $status"
     results+=("| $base | $final | ${when:0:4}-${when:4:2}-${when:6:2} ${when:9:2}:${when:11:2}:${when:13:2} | $(human_size "$size") | $status |")

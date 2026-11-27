@@ -53,7 +53,7 @@ Run `./linux/install.sh --links-only` to link the scripts without installing pac
 
 **iPhone transfer:** plug in the phone, unlock it and tap Trust, then run `iphone`. The videos are in `~/iphone/DCIM/101APPLE/`. Run `iphone unmount` before unplugging. In Settings → Photos, set Transfer to Mac or PC to Keep Originals.
 
-**Importing into an episode:** run `iphone import <episode>`, for example `iphone import E001-robotaxis`. It asks whether to include photos, shows the newest files first with date and size, and lets you tick the ones to copy (space selects, Enter confirms). Each file is copied to `<episode>/originals/` as `YYYYMMDD_HHMMSS_<phone name>` using the recording date, checked with SHA-256, and never overwritten. It prints a summary table for the episode's `media.md`. Nothing on the phone is deleted. `<episode>` is a folder under `~/Documents/Prisma-Media/episodes` (change with `IPHONE_IMPORT_ROOT`) or a path.
+**Importing into an episode:** run `iphone import <episode>`, for example `iphone import E001-robotaxis`. It asks whether to include photos, shows the newest files first with date and size, and lets you tick the ones to copy (x selects, Enter confirms, Esc cancels). Live Photo video parts are hidden unless you include photos, and files already in `originals/` are marked "✓ imported". Each file is copied to `<episode>/originals/` as `YYYYMMDD_HHMMSS_<phone name>` using the recording date, checked with SHA-256, and never overwritten. It prints a summary table for the episode's `media.md`. Nothing on the phone is deleted. `<episode>` is a folder under `~/Documents/Prisma-Media/episodes` (change with `IPHONE_IMPORT_ROOT`) or a path.
 
 ## Secrets management
 
