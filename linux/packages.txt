@@ -1,0 +1,5 @@
+# Arch Linux packages for the Linux setup. One per line; comments start with #.
+# iPhone over USB (used by linux/bin/iphone)
+libimobiledevice
+usbmuxd
+ifuse
