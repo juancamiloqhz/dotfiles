@@ -389,7 +389,7 @@
     "**/.forgejo/workflows/*.yaml",
   ],
   "remote.SSH.remotePlatform": {
-    "ovh-dev": "linux",
-    "agent-vps.tail30b070.ts.net": "linux"
-  },
+    "orbit": "linux",
+    "nova": "linux"
+  }
 }
