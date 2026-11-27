@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Mount or unmount the iPhone photo library (DCIM) at ~/iphone over USB.
+set -euo pipefail
+MNT="$HOME/iphone"
+
+case "${1:-mount}" in
+  mount)
+    if [ -z "$(idevice_id -l 2>/dev/null)" ]; then
+      echo "No iPhone detected. Unlock it, tap Trust if asked, and check the cable." >&2
+      exit 1
+    fi
+    mkdir -p "$MNT"
+    if mountpoint -q "$MNT"; then
+      echo "Already mounted at $MNT"
+    else
+      ifuse "$MNT"
+      echo "Mounted at $MNT"
+    fi
+    echo "Videos: $MNT/DCIM/101APPLE (older: 100APPLE)"
+    ;;
+  unmount|umount)
+    if mountpoint -q "$MNT"; then
+      fusermount -u "$MNT"
+      echo "Unmounted $MNT. Safe to unplug."
+    else
+      echo "Not mounted."
+    fi
+    ;;
+  *)
+    echo "usage: iphone [mount|unmount]" >&2
+    exit 2
+    ;;
+esac

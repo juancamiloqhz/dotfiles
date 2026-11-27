@@ -44,6 +44,8 @@ bash scripts/test-env-backup.sh
 - **`com.juancamiloqhz.dotfiles-backup.plist`** — macOS LaunchAgent definition. Gets symlinked into `~/Library/LaunchAgents/` by install.sh. Runs the backup script at noon; if asleep, runs on wake.
 - **`iterm2/install.sh`** — standalone installer for iTerm2 + Cobalt2 theme. Installs Oh My Zsh, Powerline fonts, Cobalt2 ZSH theme, tmux, and it2 CLI. Called automatically by the main install.sh. The iTerm2 JSON profile must be imported manually.
 - **`iterm2/juancamiloqhz-cobalt2.json`** — pre-configured iTerm2 profile with Cobalt2 colors, Menlo Regular 15 font, Powerline glyphs, and word-navigation key mappings.
+- **`linux/install.sh`** — Linux (Arch/Omarchy) counterpart to `install.sh`; it does not run on macOS. Installs the packages in `linux/packages.txt` with pacman (needs sudo) and symlinks `linux/bin/*` into `~/.local/bin`, backing up conflicts like the macOS script. `--links-only` skips packages. The Linux side has no LaunchAgent, Brewfile or Cursor symlinks.
+- **`linux/bin/iphone`** — mounts the iPhone photo library with `ifuse` at `~/iphone` (`iphone`, `iphone unmount`).
 
 ## Symlink mapping
 

@@ -1,6 +1,6 @@
 # dotfiles
 
-Personal macOS configuration files and setup automation.
+Personal macOS configuration files and setup automation. The `linux/` folder holds the separate Linux (Arch/Omarchy) setup.
 
 ## What's included
 
@@ -33,6 +33,25 @@ cd ~/Dev/dotfiles && chmod +x install.sh && ./install.sh
 ```
 
 `install.sh` backs up existing configs, creates symlinks, installs Brewfile packages, and installs Cursor extensions.
+
+## Linux (Arch / Omarchy)
+
+The macOS `install.sh` does not apply on Linux. Use the separate Linux setup:
+
+```bash
+git clone https://github.com/juancamiloqhz/dotfiles.git ~/Dev/dotfiles
+cd ~/Dev/dotfiles && ./linux/install.sh
+```
+
+| Path                  | Description                                                                |
+| --------------------- | -------------------------------------------------------------------------- |
+| `linux/install.sh`    | Installs the pacman packages, then links `linux/bin/*` into `~/.local/bin` |
+| `linux/packages.txt`  | Arch packages to install (one per line; comments start with `#`)           |
+| `linux/bin/iphone`    | Mounts the iPhone photo library at `~/iphone` over USB; `iphone unmount`   |
+
+Run `./linux/install.sh --links-only` to link the scripts without installing packages. Existing files at the link targets are moved to `~/.dotfiles-backup/<timestamp>/`.
+
+**iPhone transfer:** plug in the phone, unlock it and tap Trust, then run `iphone`. The videos are in `~/iphone/DCIM/101APPLE/`. Run `iphone unmount` before unplugging. In Settings → Photos, set Transfer to Mac or PC to Keep Originals.
 
 ## Secrets management
 
