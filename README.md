@@ -47,11 +47,13 @@ cd ~/Dev/dotfiles && ./linux/install.sh
 | --------------------- | -------------------------------------------------------------------------- |
 | `linux/install.sh`    | Installs the pacman packages, then links `linux/bin/*` into `~/.local/bin` |
 | `linux/packages.txt`  | Arch packages to install (one per line; comments start with `#`)           |
-| `linux/bin/iphone`    | Mounts the iPhone photo library at `~/iphone` over USB; `iphone unmount`   |
+| `linux/bin/iphone`    | Mounts the iPhone photo library at `~/iphone` over USB; `iphone unmount`; `iphone import <episode>` |
 
 Run `./linux/install.sh --links-only` to link the scripts without installing packages. Existing files at the link targets are moved to `~/.dotfiles-backup/<timestamp>/`.
 
 **iPhone transfer:** plug in the phone, unlock it and tap Trust, then run `iphone`. The videos are in `~/iphone/DCIM/101APPLE/`. Run `iphone unmount` before unplugging. In Settings → Photos, set Transfer to Mac or PC to Keep Originals.
+
+**Importing into an episode:** run `iphone import <episode>`, for example `iphone import E001-robotaxis`. It asks whether to include photos, shows the newest files first with date and size, and lets you tick the ones to copy (space selects, Enter confirms). Each file is copied to `<episode>/originals/` as `YYYYMMDD_HHMMSS_<phone name>` using the recording date, checked with SHA-256, and never overwritten. It prints a summary table for the episode's `media.md`. Nothing on the phone is deleted. `<episode>` is a folder under `~/Documents/Prisma-Media/episodes` (change with `IPHONE_IMPORT_ROOT`) or a path.
 
 ## Secrets management
 

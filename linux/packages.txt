@@ -3,3 +3,7 @@
 libimobiledevice
 usbmuxd
 ifuse
+# Used by `iphone import`: picker, video dates, photo dates
+gum
+ffmpeg
+perl-image-exiftool

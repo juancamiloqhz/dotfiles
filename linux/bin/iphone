@@ -1,33 +1,208 @@
 #!/usr/bin/env bash
-# Mount or unmount the iPhone photo library (DCIM) at ~/iphone over USB.
+# Mount or unmount the iPhone photo library (DCIM) at ~/iphone over USB,
+# or import selected videos (and optionally photos) into an episode folder.
 set -euo pipefail
 MNT="$HOME/iphone"
+EPISODES_ROOT="${IPHONE_IMPORT_ROOT:-$HOME/Documents/Prisma-Media/episodes}"
+LIST_LIMIT="${IPHONE_IMPORT_LIMIT:-200}"
+
+usage() {
+  cat >&2 <<EOF
+usage: iphone [mount|unmount]
+       iphone import <episode>
+
+import copies the clips you pick into <episode>/originals, named
+YYYYMMDD_HHMMSS_<phone name> from the recording date, and verifies each copy.
+<episode> is a folder name under $EPISODES_ROOT or a path.
+Nothing on the phone is changed or deleted.
+EOF
+  exit 2
+}
+
+do_mount() {
+  if [ -z "$(idevice_id -l 2>/dev/null)" ]; then
+    echo "No iPhone detected. Unlock it, tap Trust if asked, and check the cable." >&2
+    exit 1
+  fi
+  mkdir -p "$MNT"
+  if mountpoint -q "$MNT"; then
+    echo "Already mounted at $MNT"
+  else
+    ifuse "$MNT"
+    echo "Mounted at $MNT"
+  fi
+}
+
+do_unmount() {
+  if mountpoint -q "$MNT"; then
+    fusermount -u "$MNT"
+    echo "Unmounted $MNT. Safe to unplug."
+  else
+    echo "Not mounted."
+  fi
+}
+
+human_size() { numfmt --to=si --suffix=B --format='%.1f' "$1"; }
+
+# Recording date as YYYYMMDD_HHMMSS in the time zone where it was recorded.
+recorded_at() {
+  local f="$1" t
+  case "${f,,}" in
+    *.mov|*.mp4)
+      # Apple's tag keeps the local recording time, e.g. 2026-11-13T09:59:17-0500.
+      t=$(ffprobe -v error -show_entries format_tags=com.apple.quicktime.creationdate \
+            -of default=nw=1:nk=1 "$f" 2>/dev/null || true)
+      if [[ $t =~ ^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2}) ]]; then
+        printf '%s%s%s_%s%s%s\n' "${BASH_REMATCH[@]:1:6}"
+        return
+      fi
+      t=$(ffprobe -v error -show_entries format_tags=creation_time \
+            -of default=nw=1:nk=1 "$f" 2>/dev/null || true)
+      if [ -n "$t" ] && date -d "$t" +%Y%m%d_%H%M%S 2>/dev/null; then
+        return
+      fi
+      ;;
+    *)
+      if command -v exiftool >/dev/null; then
+        t=$(exiftool -s3 -d '%Y%m%d_%H%M%S' -DateTimeOriginal "$f" 2>/dev/null || true)
+        if [[ $t =~ ^[0-9]{8}_[0-9]{6}$ ]]; then
+          echo "$t"
+          return
+        fi
+      fi
+      ;;
+  esac
+  # Fallback: the file's modification time on the phone.
+  date -r "$f" +%Y%m%d_%H%M%S
+}
+
+do_import() {
+  [ $# -eq 1 ] || usage
+  [ -t 0 ] && [ -t 1 ] || { echo "iphone import needs an interactive terminal." >&2; exit 1; }
+
+  local episode
+  if [ -d "$1" ]; then
+    episode=$(realpath "$1")
+  elif [ -d "$EPISODES_ROOT/$1" ]; then
+    episode="$EPISODES_ROOT/$1"
+  else
+    echo "Episode folder not found: $1" >&2
+    if [ -d "$EPISODES_ROOT" ]; then
+      echo "Episodes in $EPISODES_ROOT:" >&2
+      ls -1 "$EPISODES_ROOT" >&2
+    fi
+    exit 1
+  fi
+  local dest="$episode/originals"
+
+  local mounted_here=0
+  mountpoint -q "$MNT" || mounted_here=1
+  do_mount
+  local tmp=""
+  # shellcheck disable=SC2064
+  trap 'rm -f "$tmp"; [ $mounted_here -eq 1 ] && do_unmount' EXIT
+
+  local exts=(-iname '*.mov' -o -iname '*.mp4')
+  if gum confirm "Include photos?" --default=false; then
+    exts+=(-o -iname '*.heic' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png')
+    if ! command -v exiftool >/dev/null; then
+      echo "Warning: exiftool is not installed, so photo names use the phone's file time," >&2
+      echo "not the time the photo was taken. Install it with: sudo pacman -S perl-image-exiftool" >&2
+    fi
+  fi
+
+  # Newest first: "epoch<TAB>bytes<TAB>path relative to DCIM".
+  local rows
+  rows=$(find "$MNT/DCIM" -type f \( "${exts[@]}" \) -printf '%T@\t%s\t%P\n' \
+           | sort -rn | head -n "$LIST_LIMIT")
+  if [ -z "$rows" ]; then
+    echo "No matching files on the phone."
+    exit 0
+  fi
+
+  local labels=() epoch size rel
+  while IFS=$'\t' read -r epoch size rel; do
+    labels+=("$(printf '%-24s  %s  %8s' "$rel" \
+      "$(date -d "@${epoch%.*}" '+%b %d %H:%M')" "$(human_size "$size")")")
+  done <<< "$rows"
+
+  local picked
+  picked=$(gum choose --no-limit --height 20 \
+    --header "Pick files for $(basename "$episode") (space = select, enter = confirm)" \
+    "${labels[@]}") || true
+  if [ -z "$picked" ]; then
+    echo "Nothing selected."
+    exit 0
+  fi
+
+  # Plan each copy: source, final name, recording date, size.
+  local plan=() total=0 src base when final
+  while read -r rel _; do
+    src="$MNT/DCIM/$rel"
+    base=$(basename "$rel")
+    when=$(recorded_at "$src")
+    final="${when}_${base}"
+    size=$(stat -c %s "$src")
+    plan+=("$src"$'\t'"$final"$'\t'"$when"$'\t'"$size")
+    total=$((total + size))
+    echo "  $base  ->  originals/$final  ($(human_size "$size"))"
+  done <<< "$picked"
+
+  mkdir -p "$dest"
+  local free
+  free=$(df --output=avail -B1 "$dest" | tail -n1)
+  if [ "$total" -gt "$free" ]; then
+    echo "Not enough space in $dest: need $(human_size "$total"), free $(human_size "$free")." >&2
+    exit 1
+  fi
+  gum confirm "Copy ${#plan[@]} file(s) ($(human_size "$total")) to $dest?" || { echo "Cancelled."; exit 0; }
+
+  local results=() sumfile src_sum dst_sum status line
+  sumfile=$(mktemp)
+  for line in "${plan[@]}"; do
+    IFS=$'\t' read -r src final when size <<< "$line"
+    base=$(basename "$src")
+    if [ -e "$dest/$final" ] || [ -e "$dest/$base" ]; then
+      status="skipped (already in originals)"
+    else
+      tmp="$dest/.$final.partial"
+      # Read the phone file once: write the copy and hash the same bytes.
+      gum spin --title "Copying $base ($(human_size "$size"))..." -- \
+        bash -c 'tee "$1" < "$2" | sha256sum > "$3"' _ "$tmp" "$src" "$sumfile"
+      src_sum=$(cut -d' ' -f1 "$sumfile")
+      gum spin --title "Verifying $base..." -- bash -c 'sha256sum "$1" > "$2"' _ "$tmp" "$sumfile"
+      dst_sum=$(cut -d' ' -f1 "$sumfile")
+      if [ "$src_sum" = "$dst_sum" ]; then
+        touch -r "$src" "$tmp"
+        mv -n "$tmp" "$dest/$final"
+        status="ok, sha256 $src_sum"
+      else
+        rm -f "$tmp"
+        status="FAILED: checksum mismatch, copy removed"
+      fi
+      tmp=""
+    fi
+    echo "$base: $status"
+    results+=("| $base | $final | ${when:0:4}-${when:4:2}-${when:6:2} ${when:9:2}:${when:11:2}:${when:13:2} | $(human_size "$size") | $status |")
+  done
+  rm -f "$sumfile"
+
+  echo
+  echo "Summary for media.md:"
+  echo
+  echo "| Phone file | Saved as | Recorded | Size | Check |"
+  echo "| --- | --- | --- | --- | --- |"
+  printf '%s\n' "${results[@]}"
+  echo
+  echo "Nothing was deleted from the phone."
+}
 
 case "${1:-mount}" in
   mount)
-    if [ -z "$(idevice_id -l 2>/dev/null)" ]; then
-      echo "No iPhone detected. Unlock it, tap Trust if asked, and check the cable." >&2
-      exit 1
-    fi
-    mkdir -p "$MNT"
-    if mountpoint -q "$MNT"; then
-      echo "Already mounted at $MNT"
-    else
-      ifuse "$MNT"
-      echo "Mounted at $MNT"
-    fi
+    do_mount
     echo "Videos: $MNT/DCIM/101APPLE (older: 100APPLE)"
     ;;
-  unmount|umount)
-    if mountpoint -q "$MNT"; then
-      fusermount -u "$MNT"
-      echo "Unmounted $MNT. Safe to unplug."
-    else
-      echo "Not mounted."
-    fi
-    ;;
-  *)
-    echo "usage: iphone [mount|unmount]" >&2
-    exit 2
-    ;;
+  unmount|umount) do_unmount ;;
+  import) shift; do_import "$@" ;;
+  *) usage ;;
 esac
