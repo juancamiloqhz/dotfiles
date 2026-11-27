@@ -44,6 +44,34 @@ do_unmount() {
 
 human_size() { numfmt --to=si --suffix=B --format='%.1f' "$1"; }
 
+# Copy $1 to $2 and write the SHA-256 of the bytes read to $3, showing progress.
+copy_with_progress() {
+  local src="$1" out="$2" sumfile="$3" total cur pct rate eta start now
+  total=$(stat -c %s "$src")
+  start=$(date +%s)
+  # Read the phone file once: write the copy and hash the same bytes.
+  bash -c 'tee "$1" < "$2" | sha256sum > "$3"' _ "$out" "$src" "$sumfile" &
+  COPY_PID=$!
+  while kill -0 "$COPY_PID" 2>/dev/null; do
+    cur=$(stat -c %s "$out" 2>/dev/null || echo 0)
+    now=$(date +%s)
+    pct=$(( total > 0 ? cur * 100 / total : 100 ))
+    rate=$(( now > start ? cur / (now - start) : 0 ))
+    if [ "$rate" -gt 0 ]; then
+      eta=$(( (total - cur) / rate ))
+      eta=$(printf '%d:%02d' $((eta / 60)) $((eta % 60)))
+    else
+      eta="--:--"
+    fi
+    printf '\r  %3d%%  %s / %s  %s/s  ETA %s   ' "$pct" \
+      "$(human_size "$cur")" "$(human_size "$total")" "$(human_size "$rate")" "$eta"
+    sleep 1
+  done
+  wait "$COPY_PID"
+  COPY_PID=""
+  printf '\r  100%%  %s copied in %ss%*s\n' "$(human_size "$total")" "$(( $(date +%s) - start ))" 20 ""
+}
+
 # Recording date as YYYYMMDD_HHMMSS in the time zone where it was recorded.
 recorded_at() {
   local f="$1" t
@@ -100,7 +128,9 @@ do_import() {
   mountpoint -q "$MNT" || MOUNTED_HERE=1
   do_mount
   PARTIAL=""
-  trap 'rm -f "${PARTIAL:-}"; if [ "${MOUNTED_HERE:-0}" -eq 1 ]; then do_unmount; fi' EXIT
+  COPY_PID=""
+  trap 'if [ -n "${COPY_PID:-}" ]; then kill "$COPY_PID" 2>/dev/null || true; fi
+        rm -f "${PARTIAL:-}"; if [ "${MOUNTED_HERE:-0}" -eq 1 ]; then do_unmount; fi' EXIT
 
   local photos=0
   if gum confirm "Include photos?" --default=false; then
@@ -197,9 +227,8 @@ do_import() {
       status="skipped (already in originals)"
     else
       PARTIAL="$dest/.$final.partial"
-      # Read the phone file once: write the copy and hash the same bytes.
-      gum spin --title "Copying $base ($(human_size "$size"))..." -- \
-        bash -c 'tee "$1" < "$2" | sha256sum > "$3"' _ "$PARTIAL" "$src" "$sumfile"
+      echo "Copying $base ($(human_size "$size"))"
+      copy_with_progress "$src" "$PARTIAL" "$sumfile"
       src_sum=$(cut -d' ' -f1 "$sumfile")
       gum spin --title "Verifying $base..." -- bash -c 'sha256sum "$1" > "$2"' _ "$PARTIAL" "$sumfile"
       dst_sum=$(cut -d' ' -f1 "$sumfile")
